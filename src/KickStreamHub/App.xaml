@@ -1,0 +1,33 @@
+<Application x:Class="KickStreamHub.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:KickStreamHub.Converters">
+    <Application.Resources>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <conv:BoolToVisibilityInverseConverter x:Key="InverseBoolToVis" />
+            <conv:LiveToBrushConverter x:Key="LiveToBrush" />
+            <conv:LiveTextConverter x:Key="LiveTextConverter" />
+            <conv:ChatConnectionTextConverter x:Key="ChatConnTextConverter" />
+            <conv:PauseTextConverter x:Key="PauseTextConverter" />
+            <conv:ViewerFormatConverter x:Key="ViewerFormat" />
+            <conv:StringToBrushConverter x:Key="StringToBrush" />
+            <conv:PageVisibilityConverter x:Key="PageVisConverter" />
+            <conv:ActivePageMatchConverter x:Key="ActivePageMatch" />
+            <conv:NonEmptyToVisibilityConverter x:Key="NonEmptyToVis" />
+            <conv:NullToVisibilityConverter x:Key="NullToVis" />
+            <conv:PlayButtonTextConverter x:Key="PlayButtonTextConverter" />
+            <conv:TheaterButtonTextConverter x:Key="TheaterButtonTextConverter" />
+            <conv:FullScreenButtonTextConverter x:Key="FullScreenButtonTextConverter" />
+            <conv:MuteButtonTextConverter x:Key="MuteButtonTextConverter" />
+            <conv:MultiLayoutTextConverter x:Key="MultiLayoutTextConverter" />
+            <conv:SoloAudioTextConverter x:Key="SoloAudioTextConverter" />
+            <conv:InitialsConverter x:Key="InitialsConverter" />
+            <conv:AvatarImageConverter x:Key="AvatarImageConverter" />
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,30 @@
+## .NET / Visual Studio Build Outputs
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+## Temporary & Crash Dumps
+*.tmp
+*.bak
+*.dmp
+*.pdb
+*.xml
+publish_small/

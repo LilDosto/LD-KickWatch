@@ -1,0 +1,1168 @@
+<Window x:Class="KickStreamHub.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:KickStreamHub.ViewModels"
+        xmlns:helpers="clr-namespace:KickStreamHub.Helpers"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
+        xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+        Title="LD KickWatch" Height="800" Width="1340" MinWidth="1000" MinHeight="620"
+        Icon="pack://application:,,,/Resources/app.ico"
+        KeyDown="MainWindow_KeyDown"
+        WindowStartupLocation="CenterScreen">
+    <Window.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="F11" Command="{Binding ToggleFullScreenCommand}" />
+        <KeyBinding Key="Q" Modifiers="Ctrl" Command="{Binding NavigateToCommand}" CommandParameter="exit" />
+    </Window.InputBindings>
+
+    <Grid Background="#060A10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition>
+                <ColumnDefinition.Style>
+                    <Style TargetType="ColumnDefinition">
+                        <Setter Property="Width" Value="64" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFullScreen}" Value="True">
+                                <Setter Property="Width" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <Border Grid.Column="0" Background="#080D15" BorderBrush="#1A2536" BorderThickness="0,0,1,0"
+                Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" VerticalAlignment="Top" Margin="0,16,0,0">
+                    <!-- Brand Logo -->
+                    <Border Width="40" Height="40" CornerRadius="10" Background="#122916" BorderBrush="#53FC18" BorderThickness="1.5"
+                            HorizontalAlignment="Center" Margin="0,0,0,22" ToolTip="LD KickWatch">
+                        <TextBlock Text="LD" FontSize="16" FontWeight="Black" Foreground="#53FC18"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Home Nav Button -->
+                    <Grid Margin="0,0,0,8">
+                        <Border Width="3" Height="24" CornerRadius="2" Background="#53FC18" HorizontalAlignment="Left"
+                                Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=home}" />
+                        <Button Content="🏠" FontSize="17" Width="44" Height="44" HorizontalAlignment="Center"
+                                Style="{StaticResource SecondaryButton}" ToolTip="Ana Sayfa (Kanal Merkezi ve Oynatıcı)"
+                                Command="{Binding NavigateToCommand}" CommandParameter="home" />
+                    </Grid>
+
+                    <!-- Multi-Stream (Squad View) Nav Button -->
+                    <Grid Margin="0,0,0,8">
+                        <Border Width="3" Height="24" CornerRadius="2" Background="#53FC18" HorizontalAlignment="Left"
+                                Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=multistream}" />
+                        <Button Content="⊞" FontSize="19" Width="44" Height="44" HorizontalAlignment="Center"
+                                Style="{StaticResource SecondaryButton}" ToolTip="Çoklu Yayın İzleme (2x2 Squad View)"
+                                Command="{Binding NavigateToCommand}" CommandParameter="multistream" />
+                    </Grid>
+
+                    <!-- Settings Nav Button -->
+                    <Grid Margin="0,0,0,8">
+                        <Border Width="3" Height="24" CornerRadius="2" Background="#53FC18" HorizontalAlignment="Left"
+                                Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=settings}" />
+                        <Button Content="⚙" FontSize="17" Width="44" Height="44" HorizontalAlignment="Center"
+                                Style="{StaticResource SecondaryButton}" ToolTip="Ayarlar, Bildirimler ve Yedekleme"
+                                Command="{Binding NavigateToCommand}" CommandParameter="settings" />
+                    </Grid>
+
+                    <!-- About Nav Button -->
+                    <Grid Margin="0,0,0,8">
+                        <Border Width="3" Height="24" CornerRadius="2" Background="#53FC18" HorizontalAlignment="Left"
+                                Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=about}" />
+                        <Button Content="❓" FontSize="16" Width="44" Height="44" HorizontalAlignment="Center"
+                                Style="{StaticResource SecondaryButton}" ToolTip="Hakkında ve Kısayollar"
+                                Command="{Binding NavigateToCommand}" CommandParameter="about" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- Bottom Sidebar Actions -->
+                <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Margin="0,0,0,14">
+                    <Button Content="💬" FontSize="15" Width="40" Height="40" HorizontalAlignment="Center" Margin="0,0,0,8"
+                            Style="{StaticResource SecondaryButton}" ToolTip="Yerleşik Sohbet Çekmecesini Aç/Kapat"
+                            Command="{Binding ToggleEmbeddedChatCommand}" />
+                    <Button Content="⟳" FontSize="16" Width="40" Height="40" HorizontalAlignment="Center" Margin="0,0,0,10"
+                            Style="{StaticResource SecondaryButton}" ToolTip="Kanalları Şimdi Yenile (F5)"
+                            Command="{Binding RefreshCommand}" />
+                    <TextBlock Text="{Binding AppVersion, StringFormat='v{0}'}" FontSize="10" Foreground="#475569"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ==================== MAIN CONTENT AREA ==================== -->
+        <Grid Grid.Column="1">
+
+            <!-- ==================== 1. HOME PAGE ==================== -->
+            <Grid Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=home}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition>
+                        <ColumnDefinition.Style>
+                            <Style TargetType="ColumnDefinition">
+                                <Setter Property="Width" Value="450" />
+                                <Setter Property="MinWidth" Value="360" />
+                                <Setter Property="MaxWidth" Value="640" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFullScreen}" Value="True">
+                                        <Setter Property="Width" Value="0" />
+                                        <Setter Property="MinWidth" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ColumnDefinition.Style>
+                    </ColumnDefinition>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT PANEL: CHANNEL HUB (Hidden in FullScreen) -->
+                <Grid Grid.Column="0" Margin="14,12,6,12"
+                      Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0: KPI Stat Cards -->
+                    <UniformGrid Grid.Row="0" Columns="3" Margin="0,0,0,10">
+                        <Border Background="#0E1520" CornerRadius="10" Padding="11,7" Margin="0,0,4,0" BorderBrush="#1C283A" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="TAKİP EDİLEN" FontSize="9" FontWeight="Bold" Foreground="#64748B" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="📡 " FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding TotalChannels}" FontSize="15" FontWeight="ExtraBold" Foreground="#F1F5F9" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#0E1520" CornerRadius="10" Padding="11,7" Margin="2,0,2,0" BorderBrush="#1C283A" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="ŞU AN CANLI" FontSize="9" FontWeight="Bold" Foreground="#64748B" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="🔴 " FontSize="11" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding LiveCount}" FontSize="15" FontWeight="ExtraBold" Foreground="#53FC18" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#0E1520" CornerRadius="10" Padding="11,7" Margin="4,0,0,0" BorderBrush="#1C283A" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="TOPLAM İZLEYİCİ" FontSize="9" FontWeight="Bold" Foreground="#64748B" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="👥 " FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding TotalViewers, Converter={StaticResource ViewerFormat}}" FontSize="15" FontWeight="ExtraBold" Foreground="#F1F5F9" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Row 1: Add Channel + Group Input Bar -->
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="105" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Margin="0,0,5,0"
+                                 Tag="Kanal adı veya URL ekle..."
+                                 Text="{Binding AddChannelText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Kanal adı girin (ör: elwind) ve Enter'a basın">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding AddChannelCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBox Grid.Column="1" Margin="0,0,5,0"
+                                 Tag="🏷 Grup (FPS)"
+                                 Text="{Binding AddChannelGroupText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="İsteğe bağlı grup etiketi (ör: FPS, IRL, Favori)">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding AddChannelCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Grid.Column="2" Content="+ Ekle" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding AddChannelCommand}" Margin="0,0,5,0" Padding="11,7" />
+                        <Button Grid.Column="3" Content="⟳" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding RefreshCommand}" ToolTip="Durumları Yenile (F5)" Padding="9,7" />
+                    </Grid>
+
+                    <!-- Row 2: Search + Group Filter + Live Filter Row -->
+                    <Grid Grid.Row="2" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="118" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" x:Name="SearchBox" Margin="0,0,5,0"
+                                 Tag="🔍 Kanal, başlık veya kategori ara..."
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                        <ComboBox Grid.Column="1" Margin="0,0,5,0" FontSize="11.5" Padding="8,5"
+                                  ItemsSource="{Binding GroupFilterOptions}"
+                                  SelectedItem="{Binding SelectedGroupFilter}"
+                                  ToolTip="Gruba göre filtrele" />
+                        <ToggleButton Grid.Column="2" Style="{StaticResource FilterChipToggle}"
+                                      IsChecked="{Binding OnlyLiveFilter}"
+                                      Content="🔴 Canlı"
+                                      ToolTip="Yalnızca canlı yayında olan kanalları göster" />
+                    </Grid>
+
+                    <!-- Row 3: Channel Cards ListBox -->
+                    <Border Grid.Row="3" Background="#0A0F17" BorderBrush="#1A2638" BorderThickness="1" CornerRadius="12" Padding="4">
+                        <Grid>
+                            <ListBox x:Name="ChannelList"
+                                     ItemsSource="{Binding Channels}"
+                                     SelectedItem="{Binding SelectedChannel}"
+                                     Background="Transparent" BorderThickness="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.CanContentScroll="False"
+                                     MouseDoubleClick="ChannelList_MouseDoubleClick">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="2,2.5" />
+                                        <Setter Property="Cursor" Value="Hand" />
+                                        <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource BoolToVis}}" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="CardBorder"
+                                                            Background="#101824"
+                                                            BorderBrush="#1B283B"
+                                                            BorderThickness="1"
+                                                            CornerRadius="10"
+                                                            Padding="9,8">
+                                                        <ContentPresenter />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="CardBorder" Property="Background" Value="#152030" />
+                                                            <Setter TargetName="CardBorder" Property="BorderBrush" Value="#2A3E5C" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="CardBorder" Property="Background" Value="#13222E" />
+                                                            <Setter TargetName="CardBorder" Property="BorderBrush" Value="#53FC18" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:ChannelCardViewModel}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="44" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Avatar with Initials Fallback & Live Ring -->
+                                            <Grid Grid.Column="0" Width="40" Height="40" VerticalAlignment="Center">
+                                                <Ellipse Fill="#1A2639"
+                                                         Stroke="{Binding IsLive, Converter={StaticResource LiveToBrush}}"
+                                                         StrokeThickness="2" />
+                                                <TextBlock Text="{Binding ChannelName, Converter={StaticResource InitialsConverter}}"
+                                                           FontSize="12" FontWeight="Bold" Foreground="#94A3B8"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <Ellipse Stroke="{Binding IsLive, Converter={StaticResource LiveToBrush}}"
+                                                         StrokeThickness="2">
+                                                    <Ellipse.Fill>
+                                                        <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarImageConverter}}"
+                                                                    Stretch="UniformToFill" />
+                                                    </Ellipse.Fill>
+                                                </Ellipse>
+                                            </Grid>
+
+                                            <!-- Channel Details -->
+                                            <StackPanel Grid.Column="1" Margin="9,0,6,0" VerticalAlignment="Center">
+                                                <WrapPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding ChannelName}" FontWeight="Bold" FontSize="13" Foreground="#F8FAFC" VerticalAlignment="Center" />
+                                                    <TextBlock Text="✓" Foreground="#53FC18" FontSize="11" FontWeight="Bold" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                               Visibility="{Binding Verified, Converter={StaticResource BoolToVis}}" />
+                                                    <Border CornerRadius="4" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                            Background="{Binding IsLive, Converter={StaticResource LiveToBrush}}">
+                                                        <TextBlock Text="{Binding StatusText}" FontSize="8" FontWeight="Black" Foreground="#041008" />
+                                                    </Border>
+                                                    <Border CornerRadius="4" Padding="5,1" Margin="5,0,0,0" VerticalAlignment="Center"
+                                                            Background="#1B283B" BorderBrush="#2E4361" BorderThickness="1"
+                                                            Visibility="{Binding GroupName, Converter={StaticResource NonEmptyToVis}}">
+                                                        <TextBlock Text="{Binding GroupName}" FontSize="8.5" FontWeight="SemiBold" Foreground="#93C5FD" />
+                                                    </Border>
+                                                    <Border CornerRadius="4" Padding="5,1" Margin="5,0,0,0" VerticalAlignment="Center"
+                                                            Background="#193822" BorderBrush="#53FC18" BorderThickness="1"
+                                                            Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="🔊 AÇIK" FontSize="8" FontWeight="Bold" Foreground="#53FC18" />
+                                                    </Border>
+                                                </WrapPanel>
+
+                                                <TextBlock Text="{Binding Title}" Foreground="#CBD5E1" FontSize="11"
+                                                           TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                <TextBlock Text="{Binding SubText}" Foreground="#64748B" FontSize="10"
+                                                           TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                                            </StackPanel>
+
+                                            <!-- Action Buttons -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="▶" Style="{StaticResource PrimaryButton}" Margin="0,0,3,0"
+                                                        Command="{Binding DataContext.PlayChannelCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding ChannelName}" ToolTip="Yayını İzle / Durdur" Padding="7,4" FontSize="10.5" />
+                                                <Button Content="⊞" Style="{StaticResource SecondaryButton}" Margin="0,0,3,0"
+                                                        Command="{Binding DataContext.SendToMultiStreamCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding ChannelName}" ToolTip="Çoklu Yayın (Squad) Ekranına Ekle" Padding="7,4" FontSize="10.5" />
+                                                <Button Content="💬" Style="{StaticResource SecondaryButton}" Margin="0,0,3,0"
+                                                        Command="{Binding DataContext.OpenChatCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding ChannelName}" ToolTip="Harici Sohbet Penceresi Aç" Padding="7,4" FontSize="10.5" />
+                                                <Button Content="✕" Style="{StaticResource DangerButton}"
+                                                        Command="{Binding DataContext.RemoveChannelCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding ChannelName}" ToolTip="Listeden Kaldır" Padding="6,4" FontSize="10.5" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Empty State when no channels match filter -->
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding VisibleChannelCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="📭" FontSize="30" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                                <TextBlock Text="Gösterilecek kanal bulunamadı" FontSize="13" FontWeight="SemiBold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                <TextBlock Text="Arama/grup filtresini temizleyin veya yeni bir kanal ekleyin." FontSize="11" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Row 4: Quick Import / Export / Squad Toolbar -->
+                    <UniformGrid Grid.Row="4" Columns="3" Margin="0,7,0,0">
+                        <Button Content="📤 Dışa Aktar" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="6,5" Margin="0,0,3,0"
+                                Click="ExportFavorites_Click" ToolTip="Favori kanalları ve grupları JSON veya CSV olarak yedekle" />
+                        <Button Content="📥 İçe Aktar" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="6,5" Margin="2,0,2,0"
+                                Click="ImportFavorites_Click" ToolTip="Yedeklenmiş JSON veya CSV dosyasından kanalları içe aktar" />
+                        <Button Content="⊞ Çoklu Yayın" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="6,5" Margin="3,0,0,0"
+                                Command="{Binding NavigateToCommand}" CommandParameter="multistream" ToolTip="2x2 Çoklu Yayın İzleme Stüdyosunu Aç" />
+                    </UniformGrid>
+
+                    <!-- Row 5: Status Bar -->
+                    <Border Grid.Row="5" Background="#0B111A" CornerRadius="8" Padding="10,5" Margin="0,6,0,0" BorderBrush="#172234" BorderThickness="1">
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="#94A3B8" FontSize="11" TextTrimming="CharacterEllipsis" />
+                    </Border>
+                </Grid>
+
+                <!-- GRIDSPLITTER -->
+                <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                              Background="Transparent" ShowsPreview="False" Cursor="SizeWE"
+                              Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}" />
+
+                <!-- RIGHT AREA: STREAM PLAYER + CHANNEL STUDIO + SPLIT-VIEW EMBEDDED CHAT -->
+                <Grid Grid.Column="2" Margin="4,12,14,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition>
+                            <ColumnDefinition.Style>
+                                <Style TargetType="ColumnDefinition">
+                                    <Setter Property="Width" Value="0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEmbeddedChatOpen}" Value="True">
+                                            <Setter Property="Width" Value="340" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ColumnDefinition.Style>
+                        </ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- COLUMN 0: PLAYER & CHANNEL DETAILS -->
+                    <Border Grid.Column="0" Background="#0A0F17" CornerRadius="12"
+                            BorderBrush="#1A2638" BorderThickness="1" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <!-- Row 0: Embedded Video Player -->
+                                <RowDefinition>
+                                    <RowDefinition.Style>
+                                        <Style TargetType="RowDefinition">
+                                            <Setter Property="Height" Value="Auto" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTheaterMode}" Value="True">
+                                                    <Setter Property="Height" Value="*" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </RowDefinition.Style>
+                                </RowDefinition>
+                                <!-- Row 1: Channel Info & Controls -->
+                                <RowDefinition>
+                                    <RowDefinition.Style>
+                                        <Style TargetType="RowDefinition">
+                                            <Setter Property="Height" Value="*" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTheaterMode}" Value="True">
+                                                    <Setter Property="Height" Value="0" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </RowDefinition.Style>
+                                </RowDefinition>
+                            </Grid.RowDefinitions>
+
+                            <!-- EMBEDDED PLAYER CONTAINER (AIRSPACE-SAFE HEADER + WEBVIEW2 & EMBEDDED VLC) -->
+                            <Border Grid.Row="0" Background="#05080D" CornerRadius="10" BorderBrush="#1E2C42" BorderThickness="1"
+                                    Margin="0,0,0,10"
+                                    Visibility="{Binding IsEmbeddedPlaying, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" MinHeight="320" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Dedicated Player Control Bar (Never overlapped by WebView2 or VLC!) -->
+                                    <Border Grid.Row="0" Background="#0E1624" CornerRadius="9,9,0,0" Padding="10,6" BorderBrush="#1E2C42" BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Left: Channel & Instant Engine Switcher (Web vs Embedded VLC) -->
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Ellipse Width="8" Height="8" Fill="#53FC18" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding ActivePlayerChannel}" FontWeight="Bold" FontSize="12.5" Foreground="#F8FAFC" VerticalAlignment="Center" Margin="0,0,10,0" />
+
+                                                <Button Content="🌐 Web" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3" Margin="0,0,4,0"
+                                                        Command="{Binding SwitchEmbeddedEngineCommand}" CommandParameter="embedded"
+                                                        ToolTip="Dahili WebView2 Oynatıcıya Geç" />
+                                                <Button Content="🎬 VLC (Pencere İçi)" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3"
+                                                        Command="{Binding SwitchEmbeddedEngineCommand}" CommandParameter="embedded_vlc"
+                                                        ToolTip="Pencere İçi Gömülü VLC Oynatıcıya Geç" />
+                                            </StackPanel>
+
+                                            <!-- Right: Player Controls (Mute, Reload, Chat, Theater, Fullscreen, Popout, Close) -->
+                                            <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="{Binding IsEmbeddedMuted, Converter={StaticResource MuteButtonTextConverter}}"
+                                                        Visibility="{Binding IsEmbeddedWebActive, Converter={StaticResource BoolToVis}}"
+                                                        Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3.5" Margin="0,0,4,0"
+                                                        Command="{Binding ToggleEmbeddedMuteCommand}" ToolTip="Sesi Aç / Kapat" />
+                                                <Button Content="⟳"
+                                                        Style="{StaticResource SecondaryButton}" FontSize="11" Padding="7,3.5" Margin="0,0,4,0"
+                                                        Command="{Binding ReloadEmbeddedPlayerCommand}" ToolTip="Oynatıcıyı Yeniden Yükle" />
+                                                <Button Content="💬 Sohbet"
+                                                        Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3.5" Margin="0,0,4,0"
+                                                        Command="{Binding ToggleEmbeddedChatCommand}" ToolTip="Yan Sohbet Çekmecesini Aç / Kapat" />
+                                                <Button Content="{Binding IsTheaterMode, Converter={StaticResource TheaterButtonTextConverter}}"
+                                                        Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3.5" Margin="0,0,4,0"
+                                                        Command="{Binding ToggleTheaterModeCommand}" ToolTip="Sinema Modu (Panelde Büyüt)" />
+                                                <Button Content="{Binding IsFullScreen, Converter={StaticResource FullScreenButtonTextConverter}}"
+                                                        Style="{StaticResource PrimaryButton}" FontSize="10.5" Padding="8,3.5" Margin="0,0,4,0"
+                                                        Command="{Binding ToggleFullScreenCommand}" ToolTip="Tam Ekran Modu (F11 / Esc)" />
+                                                <Button Content="🗗"
+                                                        Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3.5" Margin="0,0,4,0"
+                                                        Command="{Binding PlayPopoutCommand}" CommandParameter="{Binding ActivePlayerChannel}" ToolTip="Bağımsız Pencerede Aç" />
+                                                <Button Content="✕"
+                                                        Style="{StaticResource DangerButton}" FontSize="10.5" Padding="7,3.5"
+                                                        Command="{Binding StopEmbeddedCommand}" ToolTip="Oynatıcıyı Kapat" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Video Host Surface: Supports BOTH WebView2 and Embedded VLC (WindowsFormsHost) -->
+                                    <Grid Grid.Row="1" MinHeight="320" Background="#04090F">
+                                        <wv2:WebView2 x:Name="EmbeddedPlayer"
+                                                      DefaultBackgroundColor="#04090F"
+                                                      Visibility="{Binding IsEmbeddedWebActive, Converter={StaticResource BoolToVis}}" />
+
+                                        <wfi:WindowsFormsHost x:Name="VlcHost"
+                                                              Background="#04090F"
+                                                              Visibility="{Binding IsEmbeddedVlcActive, Converter={StaticResource BoolToVis}}">
+                                            <wf:Panel x:Name="VlcPanel" Dock="Fill" DoubleClick="VlcPanel_DoubleClick" />
+                                        </wfi:WindowsFormsHost>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <!-- CHANNEL DETAIL & ACTION PANEL -->
+                            <Grid Grid.Row="1" Visibility="{Binding IsTheaterMode, Converter={StaticResource InverseBoolToVis}}">
+                                <!-- Selected Channel View -->
+                                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                              Visibility="{Binding HasSelectedChannel, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel VerticalAlignment="Top" MaxWidth="580">
+                                        <!-- Channel Hero Card -->
+                                        <Border Background="#101824" CornerRadius="12" Padding="16,14" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Large Avatar with Initials Fallback -->
+                                                <Grid Grid.Column="0" Width="68" Height="68" VerticalAlignment="Center" Margin="0,0,14,0">
+                                                    <Ellipse Fill="#1A2639"
+                                                             Stroke="{Binding DetailIsLive, Converter={StaticResource LiveToBrush}}"
+                                                             StrokeThickness="3" />
+                                                    <TextBlock Text="{Binding DetailName, Converter={StaticResource InitialsConverter}}"
+                                                               FontSize="20" FontWeight="Black" Foreground="#94A3B8"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <Ellipse Stroke="{Binding DetailIsLive, Converter={StaticResource LiveToBrush}}"
+                                                             StrokeThickness="3">
+                                                        <Ellipse.Fill>
+                                                            <ImageBrush ImageSource="{Binding DetailAvatarPath, Converter={StaticResource AvatarImageConverter}}"
+                                                                        Stretch="UniformToFill" />
+                                                        </Ellipse.Fill>
+                                                    </Ellipse>
+                                                </Grid>
+
+                                                <!-- Channel Header Info -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                        <TextBlock Text="{Binding DetailName}" FontSize="19" FontWeight="ExtraBold" Foreground="#F8FAFC" VerticalAlignment="Center" />
+                                                        <Border Background="#14331B" CornerRadius="10" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                Visibility="{Binding DetailVerified, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="✓ Doğrulanmış" Foreground="#53FC18" FontSize="10" FontWeight="Bold" />
+                                                        </Border>
+                                                    </StackPanel>
+
+                                                    <WrapPanel Orientation="Horizontal">
+                                                        <Border CornerRadius="6" Padding="8,2.5" Margin="0,0,6,4"
+                                                                Background="{Binding DetailIsLive, Converter={StaticResource LiveToBrush}}">
+                                                            <TextBlock Text="{Binding DetailIsLive, Converter={StaticResource LiveTextConverter}}"
+                                                                       FontSize="9.5" FontWeight="Black" Foreground="#041008" />
+                                                        </Border>
+
+                                                        <Border Background="#162336" CornerRadius="6" Padding="8,2.5" Margin="0,0,6,4"
+                                                                BorderBrush="#243752" BorderThickness="1"
+                                                                Visibility="{Binding DetailCategory, Converter={StaticResource NonEmptyToVis}}">
+                                                            <TextBlock Text="{Binding DetailCategory, StringFormat='🎮 {0}'}" Foreground="#53FC18" FontSize="10.5" FontWeight="SemiBold" />
+                                                        </Border>
+
+                                                        <Border Background="#162336" CornerRadius="6" Padding="8,2.5" Margin="0,0,0,4"
+                                                                BorderBrush="#243752" BorderThickness="1"
+                                                                Visibility="{Binding DetailViewers, Converter={StaticResource NonEmptyToVis}}">
+                                                            <TextBlock Text="{Binding DetailViewers}" Foreground="#CBD5E1" FontSize="10.5" />
+                                                        </Border>
+                                                    </WrapPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Stream Title Box -->
+                                        <Border Background="#0E1520" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                BorderBrush="#1B283B" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="YAYIN BAŞLIĞI" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,3" />
+                                                <TextBlock Text="{Binding DetailTitle}" Foreground="#E2E8F0" FontSize="12.5"
+                                                           FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="18" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Group / Tag Assignment Row -->
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="🏷 Grup Etiketi:" Foreground="#94A3B8" FontSize="11.5" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBox Grid.Column="1" Tag="Örn: FPS, IRL, Turnuva, Favoriler..."
+                                                     Text="{Binding DetailGroupInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     FontSize="11.5" Padding="8,5" Margin="0,0,6,0">
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Return" Command="{Binding SaveChannelGroupCommand}" />
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                            <Button Grid.Column="2" Content="Kaydet" Style="{StaticResource SecondaryButton}"
+                                                    Command="{Binding SaveChannelGroupCommand}" FontSize="11" Padding="10,5" />
+                                        </Grid>
+
+                                        <!-- Primary Play/Stop Button -->
+                                        <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                                FontSize="13" Padding="12,10" Command="{Binding PlayChannelCommand}">
+                                            <TextBlock Text="{Binding DetailIsPlaying, Converter={StaticResource PlayButtonTextConverter}}" FontWeight="ExtraBold" />
+                                        </Button>
+
+                                        <!-- Secondary Action Buttons Grid -->
+                                        <UniformGrid Columns="4" Margin="0,0,0,4">
+                                            <Button Style="{StaticResource SecondaryButton}" Margin="0,0,3,0"
+                                                    Content="💬 Yan Sohbet" FontSize="11" Padding="6,8"
+                                                    Command="{Binding ToggleEmbeddedChatCommand}" ToolTip="Ana pencere içinde yerleşik sohbeti aç/kapat" />
+                                            <Button Style="{StaticResource SecondaryButton}" Margin="2,0,2,0"
+                                                    Content="⊞ Çoklu Yayın" FontSize="11" Padding="6,8"
+                                                    Command="{Binding SendToMultiStreamCommand}" ToolTip="2x2 Çoklu Yayın ızgarasına gönder" />
+                                            <Button Style="{StaticResource SecondaryButton}" Margin="2,0,2,0"
+                                                    Content="⛶ Ayrı Pencere" FontSize="11" Padding="6,8"
+                                                    Command="{Binding PlayPopoutCommand}" ToolTip="Bağımsız oynatıcı penceresinde aç" />
+                                            <Button Style="{StaticResource SecondaryButton}" Margin="3,0,0,0"
+                                                    Content="🌐 Tarayıcı" FontSize="11" Padding="6,8"
+                                                    Command="{Binding OpenInBrowserCommand}" ToolTip="Varsayılan web tarayıcısında aç" />
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </ScrollViewer>
+
+                                <!-- Empty State when no channel is selected -->
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                            Visibility="{Binding HasSelectedChannel, Converter={StaticResource InverseBoolToVis}}">
+                                    <TextBlock Text="📺" FontSize="38" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                                    <TextBlock Text="Bir Kanal Seçin" FontSize="16" FontWeight="Bold" Foreground="#E2E8F0" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Yayın bilgilerini görmek, Web veya VLC ile pencere içinde izlemek ya da sohbete bağlanmak için soldaki listeden bir kanala tıklayın."
+                                               FontSize="12" Foreground="#64748B" TextWrapping="Wrap" MaxWidth="320" TextAlignment="Center" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- COLUMN 1: EMBEDDED (SPLIT-VIEW) CHAT DRAWER -->
+                    <Border Grid.Column="1" Background="#0A0F17" CornerRadius="12" Margin="8,0,0,0"
+                            BorderBrush="#1A2638" BorderThickness="1" Padding="10"
+                            Visibility="{Binding IsEmbeddedChatOpen, Converter={StaticResource BoolToVis}}">
+                        <Grid DataContext="{Binding EmbeddedChat}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Embedded Chat Header -->
+                            <Border Grid.Row="0" Background="#0E1520" CornerRadius="8" Padding="10,7" Margin="0,0,0,8" BorderBrush="#1B283B" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                 Fill="{Binding IsConnected, Converter={StaticResource LiveToBrush}}" />
+                                        <TextBlock Text="{Binding ChannelName, StringFormat='💬 {0}'}" FontWeight="Bold" FontSize="12.5" Foreground="#53FC18" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding IsConnected, Converter={StaticResource ChatConnTextConverter}, StringFormat=' ({0})'}"
+                                                   Foreground="#64748B" FontSize="10.5" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="🗗" Style="{StaticResource SecondaryButton}" FontSize="10" Padding="6,3" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.OpenChatCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding ChannelName}" ToolTip="Sohbeti bağımsız pencerede aç" />
+                                        <Button Content="✕" Style="{StaticResource DangerButton}" FontSize="10" Padding="6,3"
+                                                Command="{Binding DataContext.ToggleEmbeddedChatCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                ToolTip="Yerleşik sohbet çekmecesini kapat" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Embedded Chat Filter & Controls -->
+                            <Grid Grid.Row="1" Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Margin="0,0,4,0" FontSize="11.5" Padding="8,5"
+                                         Tag="🔍 Sohbette ara..."
+                                         Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1" Content="{Binding IsPaused, Converter={StaticResource PauseTextConverter}}"
+                                        Style="{StaticResource SecondaryButton}" Margin="0,0,4,0"
+                                        Command="{Binding TogglePauseCommand}" Padding="8,5" FontSize="10.5" />
+                                <Button Grid.Column="2" Content="🗑" Style="{StaticResource DangerButton}"
+                                        Command="{Binding ClearMessagesCommand}" Padding="7,5" FontSize="10.5" ToolTip="Sohbeti Temizle" />
+                            </Grid>
+
+                            <!-- Embedded Chat Messages List with Kick Emote Rendering -->
+                            <Border Grid.Row="2" Background="#070B11" BorderBrush="#162030" BorderThickness="1" CornerRadius="8" Padding="3">
+                                <ListBox x:Name="EmbeddedChatListBox"
+                                         ItemsSource="{Binding FilteredMessages}"
+                                         Background="Transparent" BorderThickness="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.CanContentScroll="False"
+                                         VirtualizingPanel.ScrollUnit="Pixel">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#0D141F" CornerRadius="5" Padding="7,4" Margin="1,1.5">
+                                                <TextBlock TextWrapping="Wrap"
+                                                           FontSize="{Binding DataContext.EmbeddedChat.FontSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           helpers:RichChatHelper.MessageItem="{Binding}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0" />
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Focusable" Value="False" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+                            </Border>
+
+                            <!-- Embedded Chat Font Size Bar -->
+                            <Grid Grid.Row="3" Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="🔠 Yazı Boyutu:" Foreground="#64748B" FontSize="10.5" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <Slider Grid.Column="1" Minimum="10" Maximum="20" Value="{Binding FontSize}"
+                                        TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding MessageCount, StringFormat='{}{0} mesaj'}" Foreground="#64748B" FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ==================== 2. MULTI-STREAM (SQUAD VIEW 2x2) PAGE ==================== -->
+            <Grid Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=multistream}"
+                  Margin="16,12,16,12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Squad View Header Toolbar -->
+                <Border Grid.Row="0" Background="#0E1520" CornerRadius="10" Padding="14,9" Margin="0,0,0,10" BorderBrush="#1B283B" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="⊞ Çoklu Yayın İzleme Stüdyosu (Squad View)" FontSize="16" FontWeight="ExtraBold" Foreground="#F8FAFC" VerticalAlignment="Center" />
+                            <TextBlock Text="  •  Aynı anda 2 veya 4 yayını izleyin ve tek tıkla aktif sesi seçin" FontSize="11.5" Foreground="#64748B" VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="⚡ Canlı Kanalları Otomatik Doldur" Style="{StaticResource PrimaryButton}"
+                                    FontSize="11.5" Padding="12,6" Margin="0,0,8,0"
+                                    Command="{Binding AutoFillLiveToMultiStreamCommand}" />
+                            <Button Content="{Binding IsQuadLayout, Converter={StaticResource MultiLayoutTextConverter}}"
+                                    Style="{StaticResource SecondaryButton}" FontSize="11.5" Padding="12,6" Margin="0,0,8,0"
+                                    Command="{Binding ToggleMultiLayoutCommand}" />
+                            <Button Content="⏹ Tümünü Kapat" Style="{StaticResource DangerButton}"
+                                    FontSize="11.5" Padding="12,6"
+                                    Command="{Binding StopAllMultiStreamCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 2x2 or 1x2 Grid of Stream Slots -->
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition>
+                            <RowDefinition.Style>
+                                <Style TargetType="RowDefinition">
+                                    <Setter Property="Height" Value="*" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsQuadLayout}" Value="False">
+                                            <Setter Property="Height" Value="0" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </RowDefinition.Style>
+                        </RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- SLOT 0 (Top-Left) -->
+                    <Border Grid.Row="0" Grid.Column="0" Background="#0A0F17" CornerRadius="10" Margin="0,0,5,5" BorderBrush="#1C283B" BorderThickness="1">
+                        <Grid DataContext="{Binding MultiSlots[0]}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#0E1624" CornerRadius="9,9,0,0" Padding="8,5" BorderBrush="#1E2C42" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="#1" FontWeight="Black" Foreground="#53FC18" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                    <TextBox Grid.Column="1" Tag="Kanal adı..." Text="{Binding ChannelName, UpdateSourceTrigger=PropertyChanged}" FontSize="11.5" Padding="7,4" Margin="0,0,6,0" />
+                                    <Button Grid.Column="2" Content="▶ Aç" Style="{StaticResource PrimaryButton}" FontSize="10.5" Padding="8,4"
+                                            Command="{Binding DataContext.StartMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                        <Button Content="{Binding IsMuted, Converter={StaticResource SoloAudioTextConverter}}"
+                                                Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.SoloAudioMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                        <Button Content="💬" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.OpenChatCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding ChannelName}" />
+                                        <Button Content="✕" Style="{StaticResource DangerButton}" FontSize="10.5" Padding="7,4"
+                                                Command="{Binding DataContext.StopMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Grid Grid.Row="1">
+                                <wv2:WebView2 x:Name="MultiWebView0" DefaultBackgroundColor="#04090F"
+                                              Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="Ekran #1 — Kanal adı girip '▶ Aç' butonuna tıklayın" Foreground="#475569" FontSize="12"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVis}}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- SLOT 1 (Top-Right) -->
+                    <Border Grid.Row="0" Grid.Column="1" Background="#0A0F17" CornerRadius="10" Margin="5,0,0,5" BorderBrush="#1C283B" BorderThickness="1">
+                        <Grid DataContext="{Binding MultiSlots[1]}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#0E1624" CornerRadius="9,9,0,0" Padding="8,5" BorderBrush="#1E2C42" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="#2" FontWeight="Black" Foreground="#53FC18" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                    <TextBox Grid.Column="1" Tag="Kanal adı..." Text="{Binding ChannelName, UpdateSourceTrigger=PropertyChanged}" FontSize="11.5" Padding="7,4" Margin="0,0,6,0" />
+                                    <Button Grid.Column="2" Content="▶ Aç" Style="{StaticResource PrimaryButton}" FontSize="10.5" Padding="8,4"
+                                            Command="{Binding DataContext.StartMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                        <Button Content="{Binding IsMuted, Converter={StaticResource SoloAudioTextConverter}}"
+                                                Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.SoloAudioMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                        <Button Content="💬" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.OpenChatCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding ChannelName}" />
+                                        <Button Content="✕" Style="{StaticResource DangerButton}" FontSize="10.5" Padding="7,4"
+                                                Command="{Binding DataContext.StopMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Grid Grid.Row="1">
+                                <wv2:WebView2 x:Name="MultiWebView1" DefaultBackgroundColor="#04090F"
+                                              Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="Ekran #2 — Kanal adı girip '▶ Aç' butonuna tıklayın" Foreground="#475569" FontSize="12"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVis}}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- SLOT 2 (Bottom-Left) -->
+                    <Border Grid.Row="1" Grid.Column="0" Background="#0A0F17" CornerRadius="10" Margin="0,5,5,0" BorderBrush="#1C283B" BorderThickness="1"
+                            Visibility="{Binding IsQuadLayout, Converter={StaticResource BoolToVis}}">
+                        <Grid DataContext="{Binding MultiSlots[2]}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#0E1624" CornerRadius="9,9,0,0" Padding="8,5" BorderBrush="#1E2C42" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="#3" FontWeight="Black" Foreground="#53FC18" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                    <TextBox Grid.Column="1" Tag="Kanal adı..." Text="{Binding ChannelName, UpdateSourceTrigger=PropertyChanged}" FontSize="11.5" Padding="7,4" Margin="0,0,6,0" />
+                                    <Button Grid.Column="2" Content="▶ Aç" Style="{StaticResource PrimaryButton}" FontSize="10.5" Padding="8,4"
+                                            Command="{Binding DataContext.StartMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                        <Button Content="{Binding IsMuted, Converter={StaticResource SoloAudioTextConverter}}"
+                                                Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.SoloAudioMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                        <Button Content="💬" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.OpenChatCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding ChannelName}" />
+                                        <Button Content="✕" Style="{StaticResource DangerButton}" FontSize="10.5" Padding="7,4"
+                                                Command="{Binding DataContext.StopMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Grid Grid.Row="1">
+                                <wv2:WebView2 x:Name="MultiWebView2" DefaultBackgroundColor="#04090F"
+                                              Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="Ekran #3 — Kanal adı girip '▶ Aç' butonuna tıklayın" Foreground="#475569" FontSize="12"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVis}}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- SLOT 3 (Bottom-Right) -->
+                    <Border Grid.Row="1" Grid.Column="1" Background="#0A0F17" CornerRadius="10" Margin="5,5,0,0" BorderBrush="#1C283B" BorderThickness="1"
+                            Visibility="{Binding IsQuadLayout, Converter={StaticResource BoolToVis}}">
+                        <Grid DataContext="{Binding MultiSlots[3]}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#0E1624" CornerRadius="9,9,0,0" Padding="8,5" BorderBrush="#1E2C42" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="#4" FontWeight="Black" Foreground="#53FC18" VerticalAlignment="Center" Margin="2,0,8,0" />
+                                    <TextBox Grid.Column="1" Tag="Kanal adı..." Text="{Binding ChannelName, UpdateSourceTrigger=PropertyChanged}" FontSize="11.5" Padding="7,4" Margin="0,0,6,0" />
+                                    <Button Grid.Column="2" Content="▶ Aç" Style="{StaticResource PrimaryButton}" FontSize="10.5" Padding="8,4"
+                                            Command="{Binding DataContext.StartMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                        <Button Content="{Binding IsMuted, Converter={StaticResource SoloAudioTextConverter}}"
+                                                Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="8,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.SoloAudioMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                        <Button Content="💬" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,4" Margin="0,0,4,0"
+                                                Command="{Binding DataContext.OpenChatCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding ChannelName}" />
+                                        <Button Content="✕" Style="{StaticResource DangerButton}" FontSize="10.5" Padding="7,4"
+                                                Command="{Binding DataContext.StopMultiSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Grid Grid.Row="1">
+                                <wv2:WebView2 x:Name="MultiWebView3" DefaultBackgroundColor="#04090F"
+                                              Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="Ekran #4 — Kanal adı girip '▶ Aç' butonuna tıklayın" Foreground="#475569" FontSize="12"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding IsActive, Converter={StaticResource InverseBoolToVis}}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ==================== 3. SETTINGS PAGE ==================== -->
+            <ScrollViewer Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=settings}"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="32,22,32,28" MaxWidth="720" HorizontalAlignment="Left">
+                    <TextBlock Text="⚙ Uygulama Ayarları" FontSize="22" FontWeight="ExtraBold" Foreground="#F8FAFC" Margin="0,0,0,4" />
+                    <TextBlock Text="Oynatıcı motorunu, sesli bildirimleri, kategori uyarılarını ve kanal yedeklemelerini yönetin."
+                               FontSize="12.5" Foreground="#64748B" Margin="0,0,0,18" />
+
+                    <!-- Card 1: Player Settings -->
+                    <Border Background="#0E1520" CornerRadius="12" Padding="20" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="🎬 Oynatıcı Motoru ve Yayın Kalitesi" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,14" />
+
+                            <TextBlock Text="Varsayılan Yayın Oynatıcı" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <ComboBox x:Name="PlayerCombo" SelectedValue="{Binding Config.PlayerChoice}"
+                                      SelectedValuePath="Tag" Margin="0,0,0,14">
+                                <ComboBoxItem Tag="embedded" Content="🌐 Dahili Modern Web Oynatıcı (WebView2 — Ekstra program gerektirmez)" />
+                                <ComboBoxItem Tag="embedded_vlc" Content="🎬 Pencere İçi VLC Oynatıcı (Uygulama İçine Gömülü VLC)" />
+                                <ComboBoxItem Tag="vlc" Content="🚀 Harici VLC Media Player (Ayrı VLC penceresinde açar)" />
+                                <ComboBoxItem Tag="mpv" Content="⚡ Harici MPV Oynatıcı (Ayrı MPV penceresinde açar)" />
+                            </ComboBox>
+
+                            <TextBlock Text="Yayın Kalitesi (Pencere İçi VLC ve Harici Oynatıcılar için)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <ComboBox x:Name="QualityCombo" SelectedValue="{Binding Config.StreamQuality}"
+                                      SelectedValuePath="Tag" Margin="0,0,0,14">
+                                <ComboBoxItem Tag="best" Content="En Yüksek Kalite (best / Kaynak)" />
+                                <ComboBoxItem Tag="1080p60" Content="1080p 60 FPS (Full HD)" />
+                                <ComboBoxItem Tag="720p60" Content="720p 60 FPS (HD)" />
+                                <ComboBoxItem Tag="720p" Content="720p 30 FPS" />
+                                <ComboBoxItem Tag="480p" Content="480p" />
+                                <ComboBoxItem Tag="360p" Content="360p (Veri Tasarrufu)" />
+                                <ComboBoxItem Tag="160p" Content="160p (Minimum)" />
+                                <ComboBoxItem Tag="worst" Content="En Düşük Kalite (worst)" />
+                                <ComboBoxItem Tag="audio_only" Content="Sadece Ses (audio_only)" />
+                            </ComboBox>
+
+                            <TextBlock Text="Özel Oynatıcı Yolu (VLC/MPV — Boş bırakılırsa otomatik bulunur)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Tag="Otomatik algıla (örn: C:\Program Files\VideoLAN\VLC\vlc.exe)"
+                                         Text="{Binding Config.PlayerPath, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1" Content="📁 Gözat" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                        Click="BrowsePlayer_Click" />
+                            </Grid>
+
+                            <TextBlock Text="Streamlink Yolu (Boş bırakılırsa otomatik bulunur)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Tag="Otomatik algıla (örn: streamlink.exe)"
+                                         Text="{Binding Config.StreamlinkPath, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1" Content="📁 Gözat" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                        Click="BrowseStreamlink_Click" />
+                            </Grid>
+
+                            <TextBlock Text="Ekstra Streamlink Argümanları (İsteğe bağlı)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <TextBox Tag="Örn: --twitch-low-latency --hls-live-edge 2"
+                                     Text="{Binding Config.ExtraStreamlinkArgs, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Card 2: Audio Notifications, Category Change & Keyword Alerts -->
+                    <Border Background="#0E1520" CornerRadius="12" Padding="20" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="🔔 Sesli Bildirimler, Kategori ve Anahtar Kelime Uyarıları" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,14" />
+
+                            <TextBlock Foreground="#CBD5E1" FontSize="12.5" Margin="0,0,0,6">
+                                <Run Text="Canlı Yayın Kontrol Aralığı: " />
+                                <Run Text="{Binding Config.RefreshIntervalSeconds}" FontWeight="Bold" Foreground="#53FC18" />
+                                <Run Text=" saniye" />
+                            </TextBlock>
+                            <Slider Minimum="20" Maximum="300" Value="{Binding Config.RefreshIntervalSeconds}"
+                                    TickFrequency="10" IsSnapToTickEnabled="True" Margin="0,0,0,14" />
+
+                            <CheckBox Content="Takip edilen kanal yayına girdiğinde masaüstü bildirimi göster"
+                                      IsChecked="{Binding Config.NotificationsEnabled}" Margin="0,0,0,10" />
+                            <CheckBox Content="🔊 Bildirimlerde sesli uyarı (Chime / Özel WAV) çal"
+                                      IsChecked="{Binding Config.SoundNotificationsEnabled}" Margin="0,0,0,10" />
+                            <CheckBox Content="🎮 Yayıncı oynadığı oyunu / kategoriyi değiştirdiğinde uyar"
+                                      IsChecked="{Binding Config.NotifyOnCategoryChange}" Margin="0,0,0,14" />
+
+                            <TextBlock Text="🎯 Başlık veya Kategoride Yakalanacak Anahtar Kelimeler (Virgülle ayırın)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <TextBox Tag="Örn: çekiliş, turnuva, valorant, gta, derbi"
+                                     Text="{Binding Config.AlertKeywords, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+
+                            <TextBlock Text="🎵 Özel Bildirim Sesi (.wav — Boş bırakılırsa yerleşik armonik zil çalar)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Tag="Varsayılan yerleşik bildirim sesi"
+                                         Text="{Binding Config.CustomSoundPath, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1" Content="📁 Ses Seç" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                        Click="BrowseSound_Click" />
+                                <Button Grid.Column="2" Content="🔊 Sesi Test Et" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                                        Command="{Binding TestNotificationSoundCommand}" />
+                            </Grid>
+
+                            <CheckBox Content="Yayın açıldığında harici sohbet penceresini otomatik başlat"
+                                      IsChecked="{Binding Config.AutoOpenChat}" Margin="0,0,0,10" />
+                            <CheckBox Content="Simge durumuna küçültüldüğünde (_) sistem tepsisine gizle (Kapatınca tamamen çıkar)"
+                                      IsChecked="{Binding Config.MinimizeToTray}" Margin="0,0,0,10" />
+                            <CheckBox Content="Uygulamayı küçültülmüş olarak başlat"
+                                      IsChecked="{Binding Config.StartMinimized}" Margin="0,0,0,10" />
+                            <CheckBox Content="Windows başlangıcında LD KickWatch'u otomatik çalıştır"
+                                      IsChecked="{Binding Config.RunOnStartup}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Card 3: Bulk Import & Backup -->
+                    <Border Background="#0E1520" CornerRadius="12" Padding="20" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="📦 Toplu Kanal Ekleme ve Yedekleme (JSON / CSV)" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Toplu Kanal İçe Aktarma (Virgül veya boşlukla ayrılmış kanal adları / linkler)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Tag="Örn: elwind, wtcn, pqueen, https://kick.com/xqc"
+                                         Text="{Binding BulkImportText, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1" Content="⚡ Toplu Ekle" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"
+                                        Command="{Binding BulkImportChannelsCommand}" />
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="📤 Favorileri Dışa Aktar (JSON / CSV)" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"
+                                        Click="ExportFavorites_Click" />
+                                <Button Content="📥 Dosyadan İçe Aktar (JSON / CSV)" Style="{StaticResource SecondaryButton}"
+                                        Click="ImportFavorites_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="💾  Ayarları Kaydet ve Uygula" Style="{StaticResource PrimaryButton}"
+                            HorizontalAlignment="Left" Padding="22,11" FontSize="13.5"
+                            Click="SaveSettings_Click" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ==================== 4. ABOUT PAGE ==================== -->
+            <ScrollViewer Visibility="{Binding ActivePage, Converter={StaticResource PageVisConverter}, ConverterParameter=about}"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="32,24,32,28" MaxWidth="680" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <Border Width="36" Height="36" CornerRadius="9" Background="#122916" BorderBrush="#53FC18" BorderThickness="1.5" Margin="0,0,12,0">
+                            <TextBlock Text="LD" FontSize="15" FontWeight="Black" Foreground="#53FC18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="LD KickWatch" FontSize="24" FontWeight="Black" Foreground="#F8FAFC" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Foreground="#94A3B8" FontSize="13" Margin="0,0,0,20">
+                        <Run Text="Sürüm v" /><Run Text="{Binding AppVersion, Mode=OneWay}" /><Run Text=" — Kick.com Masaüstü Yayın Stüdyosu ve Canlı Sohbet İstemcisi" />
+                    </TextBlock>
+
+                    <Border Background="#0E1520" CornerRadius="12" Padding="20" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="🚀 Başlıca Özellikler" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,10" />
+                            <TextBlock Foreground="#CBD5E1" FontSize="12.5" TextWrapping="Wrap" LineHeight="23">
+• Pencere içi WebView2 VE Pencere İçi Gömülü VLC oynatıcı desteği (tek tıkla geçiş)&#x0a;
+• Gerçek Tam Ekran (F11 / Esc / Video içi tam ekran) ve Sinema Modu&#x0a;
+• Ana pencere içinde açılıp kapanabilen Yerleşik (Split-View) Canlı Sohbet Çekmecesi&#x0a;
+• 2x2 Çoklu Yayın İzleme (Squad View) stüdyosu ve tek tıkla ses odaklama&#x0a;
+• Sohbette gerçek görsel Kick Emote (İfade) render ve önbellekleme sistemi&#x0a;
+• Sesli bildirimler, kategori değişikliği ve başlık anahtar kelime uyarıları&#x0a;
+• Favori kanalları gruplama/etiketleme ve JSON/CSV yedekleme
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#0E1520" CornerRadius="12" Padding="20" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="⌨ Klavye Kısayolları" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,10" />
+                            <TextBlock Foreground="#CBD5E1" FontSize="12.5" TextWrapping="Wrap" LineHeight="23">
+• F11 / Esc — Oynatıcıyı Tam Ekran yap / Tam ekrandan çık&#x0a;
+• F5 — Tüm kanalların canlı yayın durumunu anında yenile&#x0a;
+• Ctrl+F — Kanal, kategori ve grup arama kutusuna odaklan&#x0a;
+• Çift Tıklama — Listedeki kanala çift tıklayarak yayını başlat&#x0a;
+• Ctrl+Q — Uygulamadan tamamen çık
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="📂  Uygulama Log Klasörünü Aç" Style="{StaticResource SecondaryButton}"
+                            HorizontalAlignment="Left" Padding="16,9"
+                            Command="{Binding OpenLogsCommand}" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>
