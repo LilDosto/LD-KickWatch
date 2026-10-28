@@ -86,6 +86,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isFullScreen;
     [ObservableProperty] private bool _isEmbeddedChatOpen;
     [ObservableProperty] private string _activePlayerChannel = string.Empty;
+    [ObservableProperty] private string _selectedQuality = "best";
 
     // Multi-Stream (Squad View) bindings
     [ObservableProperty] private bool _isQuadLayout = true;
@@ -108,6 +109,7 @@ public partial class MainViewModel : ObservableObject
         Config = _configService.Load();
         Config.RunOnStartup = StartupService.IsRunOnStartup();
         _isEmbeddedChatOpen = Config.ShowEmbeddedChat;
+        _selectedQuality = string.IsNullOrWhiteSpace(Config.StreamQuality) ? "best" : Config.StreamQuality;
 
         _api = new KickApiService();
         _avatarCache = new AvatarCacheService(_configService.AvatarCacheDirectory, _api);
@@ -181,10 +183,23 @@ public partial class MainViewModel : ObservableObject
     public void SaveConfig()
     {
         Config.ShowEmbeddedChat = IsEmbeddedChatOpen;
+        Config.StreamQuality = SelectedQuality;
         _configService.Save(Config);
         StartupService.SetRunOnStartup(Config.RunOnStartup);
         _poller.Start(Math.Max(20, Config.RefreshIntervalSeconds));
         UpdateDetailPlayState();
+    }
+
+    partial void OnSelectedQualityChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        Config.StreamQuality = value;
+        _configService.Save(Config);
+
+        if (IsEmbeddedPlaying && IsEmbeddedVlcActive && !string.IsNullOrEmpty(ActivePlayerChannel))
+        {
+            _ = PlayEmbeddedVlcPlayerAsync(ActivePlayerChannel);
+        }
     }
 
     [RelayCommand]
@@ -329,24 +344,7 @@ public partial class MainViewModel : ObservableObject
         if (targetCard != null)
             SelectedChannel = targetCard;
 
-        // 1. Pencere İçi Web Oynatıcı (WebView2)
-        if (string.Equals(Config.PlayerChoice, "embedded", StringComparison.OrdinalIgnoreCase))
-        {
-            if (IsEmbeddedPlaying && IsEmbeddedWebActive && string.Equals(ActivePlayerChannel, channelName, StringComparison.OrdinalIgnoreCase))
-            {
-                StopEmbeddedPlayer();
-                StatusMessage = "⏹ Dahili yayın durduruldu.";
-            }
-            else
-            {
-                PlayEmbeddedWebPlayer(channelName);
-                StatusMessage = $"▶ {channelName.ToUpperInvariant()} yayını Web oynatıcıda açıldı.";
-            }
-            UpdateDetailPlayState();
-            return;
-        }
-
-        // 2. Pencere İçi VLC Oynatıcı (Embedded VLC)
+        // 1. Pencere İçi VLC Oynatıcı seçiliyse
         if (string.Equals(Config.PlayerChoice, "embedded_vlc", StringComparison.OrdinalIgnoreCase))
         {
             if (IsEmbeddedPlaying && IsEmbeddedVlcActive && string.Equals(ActivePlayerChannel, channelName, StringComparison.OrdinalIgnoreCase))
@@ -356,32 +354,50 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
-                PlayEmbeddedVlcPlayer(channelName);
+                _ = PlayEmbeddedVlcPlayerAsync(channelName);
             }
             UpdateDetailPlayState();
             return;
         }
 
-        // 3. Harici VLC veya MPV Oynatıcı
-        var streamlinkPath = Streamlink.FindStreamlink(Config.StreamlinkPath);
-        var playerPath = Streamlink.FindPlayer(Config.PlayerChoice, Config.PlayerPath);
-        if (streamlinkPath is null)
+        // 2. Harici VLC veya MPV Oynatıcı seçiliyse
+        if (string.Equals(Config.PlayerChoice, "vlc", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Config.PlayerChoice, "mpv", StringComparison.OrdinalIgnoreCase))
         {
-            StatusMessage = "⚠ Streamlink bulunamadı! Ayarlardan 'Dahili Web' veya 'Pencere İçi VLC' seçebilir ya da Streamlink kurabilirsiniz.";
+            var streamlinkPath = Streamlink.FindStreamlink(Config.StreamlinkPath);
+            var playerPath = Streamlink.FindPlayer(Config.PlayerChoice, Config.PlayerPath);
+            if (streamlinkPath is null)
+            {
+                StatusMessage = "⚠ Streamlink bulunamadı! Harici oynatıcı için Streamlink kurun veya 'Pencere İçi Oynatıcı' modunu kullanın.";
+                return;
+            }
+            if (playerPath is null)
+            {
+                StatusMessage = $"⚠ {Config.PlayerChoice.ToUpperInvariant()} bulunamadı! Ayarlardan yolu belirtin.";
+                return;
+            }
+
+            var (success, message) = Streamlink.Play(channelName, streamlinkPath, playerPath, Config.StreamQuality, Config.ExtraStreamlinkArgs);
+            StatusMessage = message;
+
+            if (success && Config.AutoOpenChat && Streamlink.IsPlaying(channelName))
+                OpenChat(channelName);
+
+            UpdateDetailPlayState();
             return;
         }
-        if (playerPath is null)
+
+        // 3. Varsayılan: Pencere İçi Web Oynatıcı (WebView2)
+        if (IsEmbeddedPlaying && IsEmbeddedWebActive && string.Equals(ActivePlayerChannel, channelName, StringComparison.OrdinalIgnoreCase))
         {
-            StatusMessage = $"⚠ {Config.PlayerChoice.ToUpperInvariant()} bulunamadı! Ayarlardan oynatıcı tercihini değiştirin veya yolu belirtin.";
-            return;
+            StopEmbeddedPlayer();
+            StatusMessage = "⏹ Dahili yayın durduruldu.";
         }
-
-        var (success, message) = Streamlink.Play(channelName, streamlinkPath, playerPath, Config.StreamQuality, Config.ExtraStreamlinkArgs);
-        StatusMessage = message;
-
-        if (success && Config.AutoOpenChat && Streamlink.IsPlaying(channelName))
-            OpenChat(channelName);
-
+        else
+        {
+            PlayEmbeddedWebPlayer(channelName);
+            StatusMessage = $"▶ {channelName.ToUpperInvariant()} yayını Web oynatıcıda açıldı.";
+        }
         UpdateDetailPlayState();
     }
 
@@ -401,26 +417,68 @@ public partial class MainViewModel : ObservableObject
             OpenChat(channelName);
     }
 
-    public void PlayEmbeddedVlcPlayer(string channelName)
+    public async Task PlayEmbeddedVlcPlayerAsync(string channelName)
     {
         var vlcPath = Streamlink.FindPlayer("vlc", Config.PlayerPath);
         if (vlcPath is null)
         {
-            StatusMessage = "⚠ VLC Media Player bulunamadı! Pencere içi VLC için VLC kurun veya 'Web Oynatıcı' moduna geçin.";
+            StatusMessage = "⚠ VLC Media Player bulunamadı! Lütfen VLC kurun veya Ayarlardan yolunu seçin.";
             return;
         }
 
-        EmbeddedStopRequested?.Invoke(this, EventArgs.Empty);
-        ActivePlayerChannel = channelName;
-        IsEmbeddedWebActive = false;
-        IsEmbeddedVlcActive = true;
-        IsEmbeddedPlaying = true;
-        EmbeddedVlcPlayRequested?.Invoke(this, channelName);
+        StatusMessage = $"⏳ {channelName.ToUpperInvariant()} VLC yayını hazırlanıyor...";
 
-        if (IsEmbeddedChatOpen)
-            SyncEmbeddedChat(channelName);
-        else if (Config.AutoOpenChat)
-            OpenChat(channelName);
+        // Kanalın canlı durumunu ve playback_url'sini en güncel şekilde al
+        var status = GetStatus(channelName);
+        string? playbackUrl = status?.PlaybackUrl;
+
+        if (string.IsNullOrWhiteSpace(playbackUrl) || status is null || !status.IsLive)
+        {
+            var freshData = await _api.GetChannelAsync(channelName).ConfigureAwait(false);
+            if (freshData?.Livestream is null)
+            {
+                _dispatcher.Invoke(() =>
+                {
+                    StatusMessage = $"🔴 {channelName.ToUpperInvariant()} şu anda canlı yayında değil.";
+                });
+                return;
+            }
+            playbackUrl = freshData.PlaybackUrl;
+            if (freshData.Livestream != null && status != null)
+            {
+                status.PlaybackUrl = freshData.PlaybackUrl ?? string.Empty;
+                status.IsLive = true;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(playbackUrl))
+        {
+            _dispatcher.Invoke(() =>
+            {
+                StatusMessage = $"🔴 {channelName.ToUpperInvariant()} canlı akış linki alınamadı.";
+            });
+            return;
+        }
+
+        // İstenen kaliteye (best, 720p60, 480p vb.) ait doğrudan akış URL'sini çöz
+        var streamUrl = await _api.ResolveQualityUrlAsync(playbackUrl, Config.StreamQuality).ConfigureAwait(false);
+
+        _dispatcher.Invoke(() =>
+        {
+            EmbeddedStopRequested?.Invoke(this, EventArgs.Empty);
+            ActivePlayerChannel = channelName;
+            IsEmbeddedWebActive = false;
+            IsEmbeddedVlcActive = true;
+            IsEmbeddedPlaying = true;
+            EmbeddedVlcPlayRequested?.Invoke(this, streamUrl);
+
+            if (IsEmbeddedChatOpen)
+                SyncEmbeddedChat(channelName);
+            else if (Config.AutoOpenChat)
+                OpenChat(channelName);
+
+            UpdateDetailPlayState();
+        });
     }
 
     [RelayCommand]
@@ -437,7 +495,7 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrEmpty(targetChannel) && IsEmbeddedPlaying)
         {
             if (engine.Equals("embedded_vlc", StringComparison.OrdinalIgnoreCase))
-                PlayEmbeddedVlcPlayer(targetChannel);
+                _ = PlayEmbeddedVlcPlayerAsync(targetChannel);
             else
                 PlayEmbeddedWebPlayer(targetChannel);
 
@@ -451,7 +509,7 @@ public partial class MainViewModel : ObservableObject
         if (!IsEmbeddedPlaying || string.IsNullOrEmpty(ActivePlayerChannel)) return;
         if (IsEmbeddedVlcActive)
         {
-            PlayEmbeddedVlcPlayer(ActivePlayerChannel);
+            _ = PlayEmbeddedVlcPlayerAsync(ActivePlayerChannel);
         }
         else
         {

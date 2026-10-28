@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using KickStreamHub.Models;
 
 namespace KickStreamHub.Services;
@@ -8,9 +9,7 @@ namespace KickStreamHub.Services;
 /// <summary>
 /// Kick.com genel API'siyle konuşan servis. .NET'in HttpClient'ı, Python
 /// tarafında yaşanan curl_cffi kütüphanesinin aksine, birden fazla iş
-/// parçacığından EŞZAMANLI olarak güvenle kullanılabilir; bu, eski Python
-/// sürümünde uygulamanın rastgele çökmesine (access violation) yol açan
-/// kök nedeni tamamen ortadan kaldırır.
+/// parçacığından EŞZAMANLI olarak güvenle kullanılabilir.
 /// </summary>
 public sealed class KickApiService
 {
@@ -60,6 +59,55 @@ public sealed class KickApiService
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Master HLS playlist (.m3u8) içinden istenen kaliteye (1080p, 720p60, 480p vb.) ait doğrudan akış URL'sini seçer.
+    /// </summary>
+    public async Task<string> ResolveQualityUrlAsync(string masterPlaylistUrl, string quality, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(masterPlaylistUrl) ||
+            string.IsNullOrWhiteSpace(quality) ||
+            quality.Equals("best", StringComparison.OrdinalIgnoreCase))
+        {
+            return masterPlaylistUrl;
+        }
+
+        try
+        {
+            using var resp = await Http.GetAsync(masterPlaylistUrl, ct).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode) return masterPlaylistUrl;
+
+            var m3u8 = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var regex = new Regex(@"#EXT-X-STREAM-INF:([^\r\n]+)[\r\n]+([^\r\n]+)");
+            var matches = regex.Matches(m3u8);
+
+            string? bestMatchUrl = null;
+            var cleanQuality = quality.ToLowerInvariant().Replace("p", "").Replace("60", "").Replace("30", "");
+
+            foreach (Match match in matches)
+            {
+                var info = match.Groups[1].Value;
+                var streamUrl = match.Groups[2].Value.Trim();
+
+                if (info.Contains(quality, StringComparison.OrdinalIgnoreCase))
+                {
+                    return streamUrl;
+                }
+
+                if (!string.IsNullOrEmpty(cleanQuality) && info.Contains(cleanQuality, StringComparison.OrdinalIgnoreCase))
+                {
+                    bestMatchUrl ??= streamUrl;
+                }
+            }
+
+            return bestMatchUrl ?? masterPlaylistUrl;
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Instance.Warning($"Kalite playlisti ayrıştırılamadı ({quality}): {ex.Message}");
+            return masterPlaylistUrl;
+        }
     }
 
     public async Task<byte[]?> GetImageBytesAsync(string url, CancellationToken ct = default)

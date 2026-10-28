@@ -105,7 +105,7 @@ public partial class MainWindow : Window
         });
     }
 
-    private void ViewModel_EmbeddedVlcPlayRequested(object? sender, string channelName)
+    private void ViewModel_EmbeddedVlcPlayRequested(object? sender, string streamUrl)
     {
         _ = Dispatcher.InvokeAsync(() =>
         {
@@ -118,7 +118,6 @@ public partial class MainWindow : Window
 
                 VlcHost.UpdateLayout();
                 var hwnd = VlcPanel.Handle;
-                var streamlinkPath = _viewModel.Streamlink.FindStreamlink(_viewModel.Config.StreamlinkPath);
                 var vlcPath = _viewModel.Streamlink.FindPlayer("vlc", _viewModel.Config.PlayerPath);
 
                 if (vlcPath is null)
@@ -127,14 +126,11 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                var status = _viewModel.GetStatus(channelName);
                 var (success, msg) = _viewModel.Streamlink.PlayEmbeddedVlc(
-                    channelName,
+                    _viewModel.ActivePlayerChannel,
                     hwnd,
-                    streamlinkPath,
                     vlcPath,
-                    _viewModel.Config.StreamQuality,
-                    status?.PlaybackUrl,
+                    streamUrl,
                     _viewModel.Config.ExtraStreamlinkArgs);
 
                 _viewModel.StatusMessage = msg;

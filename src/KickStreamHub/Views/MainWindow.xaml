@@ -449,17 +449,72 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Left: Channel & Instant Engine Switcher (Web vs Embedded VLC) -->
+                                            <!-- Left: Channel, Instant Engine Switcher (Web vs VLC) & Stream Quality -->
                                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                                 <Ellipse Width="8" Height="8" Fill="#53FC18" Margin="0,0,6,0" VerticalAlignment="Center" />
                                                 <TextBlock Text="{Binding ActivePlayerChannel}" FontWeight="Bold" FontSize="12.5" Foreground="#F8FAFC" VerticalAlignment="Center" Margin="0,0,10,0" />
 
-                                                <Button Content="🌐 Web" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3" Margin="0,0,4,0"
+                                                <Button Content="🌐 Web" FontSize="10.5" Padding="7,3" Margin="0,0,4,0"
                                                         Command="{Binding SwitchEmbeddedEngineCommand}" CommandParameter="embedded"
-                                                        ToolTip="Dahili WebView2 Oynatıcıya Geç" />
-                                                <Button Content="🎬 VLC (Pencere İçi)" Style="{StaticResource SecondaryButton}" FontSize="10.5" Padding="7,3"
+                                                        ToolTip="Dahili WebView2 Oynatıcıya Geç">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEmbeddedWebActive}" Value="True">
+                                                                    <Setter Property="Background" Value="#1A3822" />
+                                                                    <Setter Property="Foreground" Value="#53FC18" />
+                                                                    <Setter Property="BorderBrush" Value="#53FC18" />
+                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <Button Content="🎬 VLC" FontSize="10.5" Padding="7,3" Margin="0,0,8,0"
                                                         Command="{Binding SwitchEmbeddedEngineCommand}" CommandParameter="embedded_vlc"
-                                                        ToolTip="Pencere İçi Gömülü VLC Oynatıcıya Geç" />
+                                                        ToolTip="Pencere İçi Gömülü VLC Oynatıcıya Geç (Hızlı &amp; Düşük Kaynak)">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEmbeddedVlcActive}" Value="True">
+                                                                    <Setter Property="Background" Value="#2A2410" />
+                                                                    <Setter Property="Foreground" Value="#F59E0B" />
+                                                                    <Setter Property="BorderBrush" Value="#F59E0B" />
+                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <!-- Stream Quality Dropdown Directly On Player Toolbar -->
+                                                <Border Background="#090E16" CornerRadius="6" BorderBrush="#1F2E45" BorderThickness="1" Padding="6,1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="⚙ Kalite:" Foreground="#94A3B8" FontSize="10.5" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                        <ComboBox SelectedValue="{Binding SelectedQuality, Mode=TwoWay}"
+                                                                  SelectedValuePath="Tag"
+                                                                  FontSize="10.5"
+                                                                  Padding="4,2"
+                                                                  Height="22"
+                                                                  MinWidth="110"
+                                                                  VerticalAlignment="Center"
+                                                                  Background="#0F1725"
+                                                                  Foreground="#F8FAFC"
+                                                                  BorderThickness="0"
+                                                                  ToolTip="Yayın Çözünürlüğü ve Kalitesi">
+                                                            <ComboBoxItem Tag="best" Content="Kaynak (En İyi)" />
+                                                            <ComboBoxItem Tag="1080p60" Content="1080p 60 FPS" />
+                                                            <ComboBoxItem Tag="720p60" Content="720p 60 FPS" />
+                                                            <ComboBoxItem Tag="720p" Content="720p 30 FPS" />
+                                                            <ComboBoxItem Tag="480p" Content="480p" />
+                                                            <ComboBoxItem Tag="360p" Content="360p" />
+                                                            <ComboBoxItem Tag="160p" Content="160p" />
+                                                            <ComboBoxItem Tag="worst" Content="En Düşük" />
+                                                            <ComboBoxItem Tag="audio_only" Content="Sadece Ses" />
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                </Border>
                                             </StackPanel>
 
                                             <!-- Right: Player Controls (Mute, Reload, Chat, Theater, Fullscreen, Popout, Close) -->
@@ -975,33 +1030,10 @@
                     <TextBlock Text="Oynatıcı motorunu, sesli bildirimleri, kategori uyarılarını ve kanal yedeklemelerini yönetin."
                                FontSize="12.5" Foreground="#64748B" Margin="0,0,0,18" />
 
-                    <!-- Card 1: Player Settings -->
+                    <!-- Card 1: Player Paths & Tools -->
                     <Border Background="#0E1520" CornerRadius="12" Padding="20" BorderBrush="#1B283B" BorderThickness="1" Margin="0,0,0,16">
                         <StackPanel>
-                            <TextBlock Text="🎬 Oynatıcı Motoru ve Yayın Kalitesi" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,14" />
-
-                            <TextBlock Text="Varsayılan Yayın Oynatıcı" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
-                            <ComboBox x:Name="PlayerCombo" SelectedValue="{Binding Config.PlayerChoice}"
-                                      SelectedValuePath="Tag" Margin="0,0,0,14">
-                                <ComboBoxItem Tag="embedded" Content="🌐 Dahili Modern Web Oynatıcı (WebView2 — Ekstra program gerektirmez)" />
-                                <ComboBoxItem Tag="embedded_vlc" Content="🎬 Pencere İçi VLC Oynatıcı (Uygulama İçine Gömülü VLC)" />
-                                <ComboBoxItem Tag="vlc" Content="🚀 Harici VLC Media Player (Ayrı VLC penceresinde açar)" />
-                                <ComboBoxItem Tag="mpv" Content="⚡ Harici MPV Oynatıcı (Ayrı MPV penceresinde açar)" />
-                            </ComboBox>
-
-                            <TextBlock Text="Yayın Kalitesi (Pencere İçi VLC ve Harici Oynatıcılar için)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
-                            <ComboBox x:Name="QualityCombo" SelectedValue="{Binding Config.StreamQuality}"
-                                      SelectedValuePath="Tag" Margin="0,0,0,14">
-                                <ComboBoxItem Tag="best" Content="En Yüksek Kalite (best / Kaynak)" />
-                                <ComboBoxItem Tag="1080p60" Content="1080p 60 FPS (Full HD)" />
-                                <ComboBoxItem Tag="720p60" Content="720p 60 FPS (HD)" />
-                                <ComboBoxItem Tag="720p" Content="720p 30 FPS" />
-                                <ComboBoxItem Tag="480p" Content="480p" />
-                                <ComboBoxItem Tag="360p" Content="360p (Veri Tasarrufu)" />
-                                <ComboBoxItem Tag="160p" Content="160p (Minimum)" />
-                                <ComboBoxItem Tag="worst" Content="En Düşük Kalite (worst)" />
-                                <ComboBoxItem Tag="audio_only" Content="Sadece Ses (audio_only)" />
-                            </ComboBox>
+                            <TextBlock Text="🎬 Harici Oynatıcı ve Araç Yolları" FontSize="15" FontWeight="Bold" Foreground="#53FC18" Margin="0,0,0,14" />
 
                             <TextBlock Text="Özel Oynatıcı Yolu (VLC/MPV — Boş bırakılırsa otomatik bulunur)" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6" />
                             <Grid Margin="0,0,0,14">

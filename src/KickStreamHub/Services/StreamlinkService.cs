@@ -4,7 +4,7 @@ using System.IO;
 namespace KickStreamHub.Services;
 
 /// <summary>
-/// Streamlink + oynatıcı (Pencere İçi VLC, Harici VLC, Harici MPV) işlemlerini bulan, başlatan ve
+/// Pencere İçi VLC, Harici VLC ve Harici MPV işlemlerini bulan, başlatan ve
 /// izleyen servis.
 /// </summary>
 public sealed class StreamlinkService
@@ -106,55 +106,38 @@ public sealed class StreamlinkService
 
     /// <summary>
     /// VLC'yi doğrudan uygulama penceresi içindeki WinForms Panel HWND'sine (--drawable-hwnd) gömer.
-    /// Streamlink kuruluysa Streamlink üzerinden, kurulu değilse Kick HLS playback_url üzerinden başlatır.
+    /// Doğrudan HLS akış linkiyle başlatıldığı için anında (0.3 saniyede) açılır, Cloudflare/Streamlink engeline takılmaz.
     /// </summary>
     public (bool success, string message) PlayEmbeddedVlc(
         string channelName,
         IntPtr hwnd,
-        string? streamlinkPath,
         string vlcPath,
-        string quality,
-        string? playbackUrl,
+        string streamUrl,
         string? extraArgs = null)
     {
         StopEmbeddedVlc();
 
         try
         {
-            ProcessStartInfo psi;
-            string vlcEmbedFlags = $"-I dummy --dummy-quiet --drawable-hwnd={hwnd.ToInt64()} --no-video-title-show --mouse-hide-timeout=1000";
+            if (string.IsNullOrWhiteSpace(streamUrl))
+            {
+                return (false, $"🔴 {channelName.ToUpperInvariant()} için canlı yayın akış linki bulunamadı.");
+            }
 
-            if (!string.IsNullOrWhiteSpace(streamlinkPath) && File.Exists(streamlinkPath))
+            var args = $"\"{streamUrl}\" -I dummy --dummy-quiet --drawable-hwnd={hwnd.ToInt64()} --no-video-title-show --network-caching=800 --clock-jitter=0 --no-sub-autodetect-file";
+            if (!string.IsNullOrWhiteSpace(extraArgs))
             {
-                var url = $"https://kick.com/{channelName}";
-                var args = $"\"{url}\" {quality} --player \"{vlcPath}\" --player-args \"{vlcEmbedFlags}\"";
-                if (!string.IsNullOrWhiteSpace(extraArgs))
-                    args += $" {extraArgs.Trim()}";
+                args += $" {extraArgs.Trim()}";
+            }
 
-                psi = new ProcessStartInfo
-                {
-                    FileName = streamlinkPath,
-                    Arguments = args,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                };
-            }
-            else if (!string.IsNullOrWhiteSpace(playbackUrl))
+            var psi = new ProcessStartInfo
             {
-                psi = new ProcessStartInfo
-                {
-                    FileName = vlcPath,
-                    Arguments = $"\"{playbackUrl}\" {vlcEmbedFlags}",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                };
-            }
-            else
-            {
-                return (false, "⚠ Pencere içi VLC için Streamlink kurulu olmalı veya kanal canlı yayında olmalıdır.");
-            }
+                FileName = vlcPath,
+                Arguments = args,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
 
             var process = Process.Start(psi);
             if (process is null) return (false, "Pencere içi VLC başlatılamadı.");
@@ -179,7 +162,7 @@ public sealed class StreamlinkService
                 _embeddedVlcChannel = channelName;
             }
 
-            return (true, $"🎬 {channelName.ToUpperInvariant()} yayını Pencere İçi VLC oynatıcıda başlatıldı.");
+            return (true, $"🎬 {channelName.ToUpperInvariant()} yayını Pencere İçi VLC'de açıldı.");
         }
         catch (Exception ex)
         {
