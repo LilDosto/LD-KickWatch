@@ -4,14 +4,14 @@
 
 **Kick.com için Modern Masaüstü Canlı Yayın İzleme Stüdyosu ve Sohbet İstemcisi**
 
-[![Release](https://img.shields.io/badge/Release-v1.5.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.6.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/LilDosto/LD-KickWatch)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/Lisans-MIT-53FC18?style=for-the-badge)](./LICENSE)
 
 Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kategori bildirimleri alın, **Pencere İçi Web Oynatıcı (WebView2)** veya **Pencere İçi Gömülü VLC** ile yayınları izleyin, **2x2 Çoklu Yayın (Squad View)** modunda 4 yayını aynı anda takip edin ve gerçek **Kick Emote** destekli canlı sohbete bağlanın.
 
-[📦 **Son Sürümü İndir (v1.5.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
+[📦 **Son Sürümü İndir (v1.6.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
 
 </div>
 
@@ -129,6 +129,13 @@ LD-KickWatch/
 ---
 
 ## 🆕 Sürüm Geçmişi
+
+### 🟢 v1.6.0 (28 Ekim 2026) - Büyük Akışkanlık & Sıfır Donma Optimize Yaması
+- **🚀 Donanımsal 60 FPS Render & Animasyon Motoru:** WPF alt motoruna 60 FPS hedef kare hızı (`DesiredFrameRate = 60`) ve tam donanım hızlandırmalı render optimizasyonu uygulandı.
+- **✨ Kanal Listesi UI Sanallaştırması (Smooth 60 FPS Scrolling):** Takip edilen yayıncılar listesinde donanımsal `VirtualizingStackPanel` ve `Recycling` modu etkinleştirildi. 100+ kanal eklendiğinde dahi sıfır takılma ile kaydırma sağlandı.
+- **🖼 Bellek İçi Dondurulmuş Avatar Önbelleği (In-Memory Avatar Cache):** Yayıncı profil fotoğrafları bellek içine alınıp thread-safe şekilde donduruldu (`Freeze()`). Liste kaydırılırken disk I/O ve görsel yeniden çizim maliyeti tamamen ortadan kaldırıldı.
+- **⚡ Asenkron Emote Birleştirme (Single-Flight Emotes):** Yoğun sohbette aynı anda geçen popüler ifadeler (örn. KEKW, LUL) eş zamanlı olarak tek bir asenkron görevle indirilip önbelleğe alınır; CPU ve ağ yükü sıfıra indirildi.
+- **🛡 UI Thread Koruma & Non-Blocking Polling:** Arka planda çalışan canlı yayın durum kontrolleri ve avatar yüklemeleri, UI iş parçacığını asla bloke etmeyecek şekilde `DispatcherPriority.Background` asenkron çağrılarına dönüştürüldü. Pencereler ve menüler her an yağ gibi akıcı kalır.
 
 ### 🟢 v1.5.0 (28 Ekim 2026)
 - **⚡ Akıcı ve Kesintisiz Canlı Sohbet (Background Dispatcher & Batching):** Canlı sohbette mesajların birkaç saniye sonra tıkanması ve akmaması sorunu tamamen çözüldü. Gelen mesajlar non-blocking kuyruk (`ConcurrentQueue`) ve 75 ms toplu arka plan işleme (`DispatcherTimer`) ile UI'ya aktarılıyor; 100.000 izleyicili yayınlarda dahi sohbet su gibi akıyor.

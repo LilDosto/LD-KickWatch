@@ -1128,7 +1128,7 @@ public partial class MainViewModel : ObservableObject
 
     private void OnResultsReady(object? sender, LiveStatusResultEventArgs e)
     {
-        _dispatcher.Invoke(() => ApplyResults(e.Results));
+        _dispatcher.BeginInvoke(DispatcherPriority.Background, () => ApplyResults(e.Results));
     }
 
     private void ApplyResults(IReadOnlyDictionary<string, ChannelStatus> results)
@@ -1274,7 +1274,7 @@ public partial class MainViewModel : ObservableObject
         if (card is null) return;
         if (_avatarCache.TryGetFreshCachedPath(channel, out var cachedPath))
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
             {
                 card.AvatarPath = cachedPath;
                 if (SelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) == true)
@@ -1282,10 +1282,10 @@ public partial class MainViewModel : ObservableObject
             });
             return;
         }
-        var path = await _avatarCache.DownloadAndCacheAsync(channel, url);
+        var path = await _avatarCache.DownloadAndCacheAsync(channel, url).ConfigureAwait(false);
         if (path != null)
         {
-            _dispatcher.Invoke(() =>
+            _dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
             {
                 card.AvatarPath = path;
                 if (SelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) == true)

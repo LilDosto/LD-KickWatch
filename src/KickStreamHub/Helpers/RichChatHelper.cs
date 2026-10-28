@@ -24,6 +24,7 @@ public static partial class RichChatHelper
     private static partial Regex EmotePattern();
 
     private static readonly ConcurrentDictionary<string, BitmapImage> EmoteCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, Task<BitmapImage?>> InFlightEmotes = new(StringComparer.OrdinalIgnoreCase);
     private static readonly StringToBrushConverter BrushConverter = new();
     private static readonly SolidColorBrush TimeBrush = CreateFrozenBrush(WpfColor.FromRgb(71, 85, 105));
     private static readonly SolidColorBrush MessageBrush = CreateFrozenBrush(WpfColor.FromRgb(226, 232, 240));
@@ -139,9 +140,25 @@ public static partial class RichChatHelper
     {
         try
         {
+            var bmp = await InFlightEmotes.GetOrAdd(emoteId, FetchEmoteBitmapAsync).ConfigureAwait(false);
+            if (bmp != null)
+            {
+                await targetImage.Dispatcher.InvokeAsync(() =>
+                {
+                    targetImage.Source = bmp;
+                });
+            }
+        }
+        catch { }
+    }
+
+    private static async Task<BitmapImage?> FetchEmoteBitmapAsync(string emoteId)
+    {
+        try
+        {
             var url = $"https://files.kick.com/emotes/{emoteId}/fullsize";
             var bytes = await EmoteHttp.GetByteArrayAsync(url).ConfigureAwait(false);
-            if (bytes.Length == 0) return;
+            if (bytes.Length == 0) return null;
 
             var bmp = new BitmapImage();
             using (var ms = new MemoryStream(bytes))
@@ -155,15 +172,11 @@ public static partial class RichChatHelper
             bmp.Freeze();
 
             EmoteCache[emoteId] = bmp;
-
-            await targetImage.Dispatcher.InvokeAsync(() =>
-            {
-                targetImage.Source = bmp;
-            });
+            return bmp;
         }
         catch
         {
-            // İndirilemezse sessizce geç
+            return null;
         }
     }
 }

@@ -193,9 +193,17 @@ public class InitialsConverter : IValueConverter
 /// </summary>
 public class AvatarImageConverter : IValueConverter
 {
+    private static readonly ConcurrentDictionary<string, BitmapImage> s_avatarCache = new(StringComparer.OrdinalIgnoreCase);
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is not string path || string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        if (value is not string path || string.IsNullOrWhiteSpace(path))
+            return null;
+
+        if (s_avatarCache.TryGetValue(path, out var cached))
+            return cached;
+
+        if (!File.Exists(path))
             return null;
 
         try
@@ -209,6 +217,8 @@ public class AvatarImageConverter : IValueConverter
             bitmap.StreamSource = stream;
             bitmap.EndInit();
             bitmap.Freeze();
+
+            s_avatarCache[path] = bitmap;
             return bitmap;
         }
         catch

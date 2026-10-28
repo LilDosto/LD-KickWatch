@@ -229,7 +229,10 @@
                                      SelectedItem="{Binding SelectedChannel}"
                                      Background="Transparent" BorderThickness="0"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                     ScrollViewer.CanContentScroll="False"
+                                     ScrollViewer.CanContentScroll="True"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel"
                                      MouseDoubleClick="ChannelList_MouseDoubleClick">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
