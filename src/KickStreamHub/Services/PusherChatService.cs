@@ -186,7 +186,7 @@ public sealed partial class PusherChatService : IAsyncDisposable
                     break;
             }
         }
-        catch (JsonException ex)
+        catch (Exception ex)
         {
             LoggingService.Instance.Warning($"Sohbet mesajı ayrıştırılamadı: {ex.Message}");
         }
@@ -194,39 +194,46 @@ public sealed partial class PusherChatService : IAsyncDisposable
 
     private void HandleChatMessagePayload(JsonElement root)
     {
-        if (!root.TryGetProperty("data", out var dataEl)) return;
-        var dataRaw = dataEl.GetString();
-        if (string.IsNullOrEmpty(dataRaw)) return;
-
-        using var innerDoc = JsonDocument.Parse(dataRaw);
-        var inner = innerDoc.RootElement;
-
-        var rawContent = inner.TryGetProperty("content", out var c) ? c.GetString() ?? string.Empty : string.Empty;
-        var content = KickEmoteRegex().Replace(rawContent, ":$1:");
-
-        var sender = inner.TryGetProperty("sender", out var s) ? s : default;
-
-        var username = "?";
-        var color = "#53FC18";
-        if (sender.ValueKind == JsonValueKind.Object)
+        try
         {
-            if (sender.TryGetProperty("username", out var u)) username = u.GetString() ?? "?";
-            if (sender.TryGetProperty("identity", out var identity) &&
-                identity.TryGetProperty("color", out var colorEl))
+            if (!root.TryGetProperty("data", out var dataEl)) return;
+            var dataRaw = dataEl.GetString();
+            if (string.IsNullOrEmpty(dataRaw)) return;
+
+            using var innerDoc = JsonDocument.Parse(dataRaw);
+            var inner = innerDoc.RootElement;
+
+            var rawContent = inner.TryGetProperty("content", out var c) ? c.GetString() ?? string.Empty : string.Empty;
+            var content = KickEmoteRegex().Replace(rawContent, ":$1:");
+
+            var sender = inner.TryGetProperty("sender", out var s) ? s : default;
+
+            var username = "?";
+            var color = "#53FC18";
+            if (sender.ValueKind == JsonValueKind.Object)
             {
-                var parsedColor = colorEl.GetString();
-                if (!string.IsNullOrWhiteSpace(parsedColor))
-                    color = parsedColor;
+                if (sender.TryGetProperty("username", out var u)) username = u.GetString() ?? "?";
+                if (sender.TryGetProperty("identity", out var identity) &&
+                    identity.TryGetProperty("color", out var colorEl))
+                {
+                    var parsedColor = colorEl.GetString();
+                    if (!string.IsNullOrWhiteSpace(parsedColor))
+                        color = parsedColor;
+                }
             }
-        }
 
-        MessageReceived?.Invoke(this, new ChatMessageEventArgs
+            MessageReceived?.Invoke(this, new ChatMessageEventArgs
+            {
+                Username = username,
+                Message = content,
+                RawMessage = rawContent,
+                ColorHex = color,
+            });
+        }
+        catch (Exception ex)
         {
-            Username = username,
-            Message = content,
-            RawMessage = rawContent,
-            ColorHex = color,
-        });
+            LoggingService.Instance.Warning($"Sohbet yükü işlenemedi: {ex.Message}");
+        }
     }
 
     private async Task SubscribeToChatroomAsync(CancellationToken ct)

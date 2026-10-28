@@ -2,6 +2,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using KickStreamHub.Services;
@@ -44,7 +45,7 @@ public partial class MainWindow : Window
         _viewModel.MultiSlotStopRequested += ViewModel_MultiSlotStopRequested;
         _viewModel.MultiSlotMuteRequested += ViewModel_MultiSlotMuteRequested;
 
-        _viewModel.EmbeddedChat.FilteredMessages.CollectionChanged += EmbeddedChat_CollectionChanged;
+        _viewModel.EmbeddedChat.NewMessagesAppended += EmbeddedChat_NewMessagesAppended;
 
         _notifications.OpenRequested += (_, _) => RestoreAndBringToFront();
         _notifications.ExitRequested += (_, _) => Close();
@@ -296,14 +297,17 @@ public partial class MainWindow : Window
 
     // ==================== EMBEDDED CHAT AUTO-SCROLL ====================
 
-    private void EmbeddedChat_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void EmbeddedChat_NewMessagesAppended(object? sender, EventArgs e)
     {
         if (_viewModel.EmbeddedChat.IsPaused) return;
-        if ((e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Reset) &&
-            EmbeddedChatListBox.Items.Count > 0)
+        try
         {
-            EmbeddedChatListBox.ScrollIntoView(EmbeddedChatListBox.Items[^1]);
+            if (EmbeddedChatListBox.Items.Count > 0)
+            {
+                EmbeddedChatListBox.ScrollIntoView(EmbeddedChatListBox.Items[^1]);
+            }
         }
+        catch { }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -377,6 +381,33 @@ public partial class MainWindow : Window
         Topmost = true;
         Topmost = false;
         Focus();
+    }
+
+    private void QualityButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.ContextMenu != null)
+        {
+            foreach (var item in fe.ContextMenu.Items.OfType<System.Windows.Controls.MenuItem>())
+            {
+                var isCurrent = string.Equals(item.Tag as string, _viewModel.SelectedQuality, StringComparison.OrdinalIgnoreCase);
+                var headerStr = item.Header?.ToString() ?? string.Empty;
+                var clean = headerStr.Replace("✓", "", StringComparison.Ordinal).Trim();
+                item.Header = isCurrent ? $"✓  {clean}" : $"    {clean}";
+                item.FontWeight = isCurrent ? FontWeights.Bold : FontWeights.Normal;
+            }
+
+            fe.ContextMenu.PlacementTarget = fe;
+            fe.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            fe.ContextMenu.IsOpen = true;
+        }
+    }
+
+    private void QualityMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.MenuItem mi && mi.Tag is string q)
+        {
+            _viewModel.SetStreamQuality(q);
+        }
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)

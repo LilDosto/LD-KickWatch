@@ -4,14 +4,14 @@
 
 **Kick.com için Modern Masaüstü Canlı Yayın İzleme Stüdyosu ve Sohbet İstemcisi**
 
-[![Release](https://img.shields.io/badge/Release-v1.4.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.5.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/LilDosto/LD-KickWatch)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/Lisans-MIT-53FC18?style=for-the-badge)](./LICENSE)
 
 Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kategori bildirimleri alın, **Pencere İçi Web Oynatıcı (WebView2)** veya **Pencere İçi Gömülü VLC** ile yayınları izleyin, **2x2 Çoklu Yayın (Squad View)** modunda 4 yayını aynı anda takip edin ve gerçek **Kick Emote** destekli canlı sohbete bağlanın.
 
-[📦 **Son Sürümü İndir (v1.4.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
+[📦 **Son Sürümü İndir (v1.5.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
 
 </div>
 
@@ -129,6 +129,11 @@ LD-KickWatch/
 ---
 
 ## 🆕 Sürüm Geçmişi
+
+### 🟢 v1.5.0 (28 Ekim 2026)
+- **⚡ Akıcı ve Kesintisiz Canlı Sohbet (Background Dispatcher & Batching):** Canlı sohbette mesajların birkaç saniye sonra tıkanması ve akmaması sorunu tamamen çözüldü. Gelen mesajlar non-blocking kuyruk (`ConcurrentQueue`) ve 75 ms toplu arka plan işleme (`DispatcherTimer`) ile UI'ya aktarılıyor; 100.000 izleyicili yayınlarda dahi sohbet su gibi akıyor.
+- **🛡 UI Virtualization Entegrasyonu:** Sohbet kutusuna UI sanallaştırma ve geri dönüşüm (`Recycling`) eklendi, gereksiz DOM ölçümleri ve CPU darboğazı ortadan kaldırıldı.
+- **🎯 Havada Kalan/Bozulan Kalite Menüsü Yerel Açılır Menüye (ContextMenu) Taşındı:** WinForms (`WindowsFormsHost` / `VlcPanel`) ve WebView2 üzerindeki WPF Airspace (saydam popup çakışması) nedeniyle oluşan donma ve bug'lar tamamen giderildi. Artık YouTube/Twitch tarzı tıklandığında anında açılan, seçili kaliteyi tik işaretiyle (✓) gösteren şık ve sıfır hatalı bir kalite menüsü bulunuyor.
 
 ### 🟢 v1.4.0 (28 Ekim 2026)
 - **💬 Canlı Sohbet Bağlantı Sorunu Düzeltildi:** Kick'in yenilediği güncel Pusher WebSocket protokolü ve anahtarı entegre edildi. Artık tüm yayıncıların canlı sohbet akışları anında ve kesintisiz bağlanıyor.

@@ -488,36 +488,33 @@
                                                     </Button.Style>
                                                 </Button>
 
-                                                <!-- Stream Quality Dropdown Directly On Player Toolbar (Spacious & Clean) -->
-                                                <Border Background="#0B1320" CornerRadius="8" BorderBrush="#24344D" BorderThickness="1" Padding="8,2" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                <!-- Stream Quality Selector (Rock-Solid ContextMenu, No Airspace / Focus Glitches) -->
+                                                <Button Style="{StaticResource SecondaryButton}"
+                                                        Padding="10,4.5"
+                                                        Margin="6,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Click="QualityButton_Click"
+                                                        ToolTip="Yayın Çözünürlüğü ve Kalitesini Değiştir">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="⚙ Kalite:" Foreground="#A0B3CC" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                                        <ComboBox SelectedValue="{Binding SelectedQuality, Mode=TwoWay}"
-                                                                  SelectedValuePath="Tag"
-                                                                  FontSize="12"
-                                                                  FontWeight="SemiBold"
-                                                                  Padding="8,4"
-                                                                  MinHeight="28"
-                                                                  MinWidth="155"
-                                                                  VerticalContentAlignment="Center"
-                                                                  VerticalAlignment="Center"
-                                                                  Background="#121B2A"
-                                                                  Foreground="#F8FAFC"
-                                                                  BorderBrush="#2E4160"
-                                                                  BorderThickness="1"
-                                                                  ToolTip="Yayın Çözünürlüğü ve Kalitesi (VLC &amp; Harici Oynatıcılar)">
-                                                            <ComboBoxItem Tag="best" Content="Kaynak (En İyi)" Padding="10,6" />
-                                                            <ComboBoxItem Tag="1080p60" Content="1080p 60 FPS" Padding="10,6" />
-                                                            <ComboBoxItem Tag="720p60" Content="720p 60 FPS" Padding="10,6" />
-                                                            <ComboBoxItem Tag="720p" Content="720p (Normal)" Padding="10,6" />
-                                                            <ComboBoxItem Tag="480p" Content="480p" Padding="10,6" />
-                                                            <ComboBoxItem Tag="360p" Content="360p (Tasarruf)" Padding="10,6" />
-                                                            <ComboBoxItem Tag="160p" Content="160p (Düşük)" Padding="10,6" />
-                                                            <ComboBoxItem Tag="worst" Content="En Düşük" Padding="10,6" />
-                                                            <ComboBoxItem Tag="audio_only" Content="Sadece Ses" Padding="10,6" />
-                                                        </ComboBox>
+                                                        <TextBlock Text="⚙ " Foreground="#53FC18" FontSize="11" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding SelectedQualityDisplay, FallbackValue='Kaynak (En İyi)'}"
+                                                                   FontSize="12" FontWeight="Bold" Foreground="#F8FAFC" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                        <TextBlock Text="▾" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" />
                                                     </StackPanel>
-                                                </Border>
+                                                    <Button.ContextMenu>
+                                                        <ContextMenu x:Name="QualityContextMenu">
+                                                            <MenuItem Header="Kaynak (En İyi)" Tag="best" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="1080p 60 FPS" Tag="1080p60" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="720p 60 FPS" Tag="720p60" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="720p (Normal)" Tag="720p" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="480p" Tag="480p" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="360p (Tasarruf)" Tag="360p" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="160p (Düşük)" Tag="160p" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="En Düşük (worst)" Tag="worst" Click="QualityMenuItem_Click" />
+                                                            <MenuItem Header="Sadece Ses" Tag="audio_only" Click="QualityMenuItem_Click" />
+                                                        </ContextMenu>
+                                                    </Button.ContextMenu>
+                                                </Button>
                                             </StackPanel>
 
                                             <!-- Right: Player Controls (Mute, Reload, Chat, Theater, Fullscreen, Popout, Close) -->
@@ -752,7 +749,9 @@
                                          ItemsSource="{Binding FilteredMessages}"
                                          Background="Transparent" BorderThickness="0"
                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                         ScrollViewer.CanContentScroll="False"
+                                         ScrollViewer.CanContentScroll="True"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.VirtualizationMode="Recycling"
                                          VirtualizingPanel.ScrollUnit="Pixel">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>

@@ -17,17 +17,20 @@ public partial class ChatWindow : Window
         Loaded += async (_, _) => await _vm.ConnectAsync(channelName, chatroomId);
         Closed += async (_, _) => await _vm.DisposeAsync();
 
-        _vm.FilteredMessages.CollectionChanged += AutoScrollToBottom;
+        _vm.NewMessagesAppended += (_, _) => AutoScrollToBottom();
     }
 
-    private void AutoScrollToBottom(object? sender, NotifyCollectionChangedEventArgs e)
+    private void AutoScrollToBottom()
     {
         if (_vm.IsPaused) return;
 
-        if ((e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Reset)
-            && ChatListBox.Items.Count > 0)
+        try
         {
-            ChatListBox.ScrollIntoView(ChatListBox.Items[^1]);
+            if (ChatListBox.Items.Count > 0)
+            {
+                ChatListBox.ScrollIntoView(ChatListBox.Items[^1]);
+            }
         }
+        catch { }
     }
 }

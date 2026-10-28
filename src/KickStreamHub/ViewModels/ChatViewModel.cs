@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,6 +21,9 @@ public partial class ChatViewModel : ObservableObject, IAsyncDisposable
 {
     private readonly PusherChatService _chatService = new();
     private readonly Dispatcher _dispatcher;
+    private readonly ConcurrentQueue<ChatMessageItem> _incomingQueue = new();
+    private readonly DispatcherTimer _batchTimer;
+
     public int MaxMessages { get; set; } = 500;
 
     [ObservableProperty] private string _channelName = string.Empty;
@@ -35,12 +39,51 @@ public partial class ChatViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<ChatMessageItem> Messages { get; } = new();
     public ObservableCollection<ChatMessageItem> FilteredMessages { get; } = new();
 
+    public event EventHandler? NewMessagesAppended;
+
     public ChatViewModel()
     {
         _dispatcher = Dispatcher.CurrentDispatcher;
         _chatService.MessageReceived += OnMessageReceived;
         _chatService.ConnectionStateChanged += (_, connected) =>
             _dispatcher.BeginInvoke(() => IsConnected = connected);
+
+        _batchTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(75)
+        };
+        _batchTimer.Tick += BatchTimer_Tick;
+        _batchTimer.Start();
+    }
+
+    private void BatchTimer_Tick(object? sender, EventArgs e)
+    {
+        if (_incomingQueue.IsEmpty) return;
+
+        bool hasAppended = false;
+        int processed = 0;
+        while (_incomingQueue.TryDequeue(out var item) && processed < 40)
+        {
+            processed++;
+            Messages.Add(item);
+            while (Messages.Count > MaxMessages)
+                Messages.RemoveAt(0);
+
+            if (!IsPaused && MatchesFilter(item))
+            {
+                FilteredMessages.Add(item);
+                while (FilteredMessages.Count > MaxMessages)
+                    FilteredMessages.RemoveAt(0);
+                hasAppended = true;
+            }
+        }
+
+        MessageCount = Messages.Count;
+
+        if (hasAppended && !IsPaused)
+        {
+            NewMessagesAppended?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public async Task ConnectAsync(string channelName, long chatroomId)
@@ -50,9 +93,12 @@ public partial class ChatViewModel : ObservableObject, IAsyncDisposable
 
         ChannelName = channelName;
         ChatroomId = chatroomId;
+
+        while (_incomingQueue.TryDequeue(out _)) { }
         Messages.Clear();
         FilteredMessages.Clear();
         MessageCount = 0;
+
         if (chatroomId > 0)
             await _chatService.ConnectAsync(chatroomId);
     }
@@ -65,29 +111,19 @@ public partial class ChatViewModel : ObservableObject, IAsyncDisposable
 
     private void OnMessageReceived(object? sender, ChatMessageEventArgs e)
     {
-        var item = new ChatMessageItem
+        try
         {
-            Username = e.Username,
-            Message = e.Message,
-            RawMessage = string.IsNullOrEmpty(e.RawMessage) ? e.Message : e.RawMessage,
-            ColorHex = e.ColorHex,
-        };
-
-        _dispatcher.BeginInvoke(() =>
-        {
-            Messages.Add(item);
-            while (Messages.Count > MaxMessages)
-                Messages.RemoveAt(0);
-
-            MessageCount = Messages.Count;
-
-            if (!IsPaused && MatchesFilter(item))
+            var item = new ChatMessageItem
             {
-                FilteredMessages.Add(item);
-                while (FilteredMessages.Count > MaxMessages)
-                    FilteredMessages.RemoveAt(0);
-            }
-        });
+                Username = e.Username,
+                Message = e.Message,
+                RawMessage = string.IsNullOrEmpty(e.RawMessage) ? e.Message : e.RawMessage,
+                ColorHex = e.ColorHex,
+            };
+
+            _incomingQueue.Enqueue(item);
+        }
+        catch { }
     }
 
     private bool MatchesFilter(ChatMessageItem item)
@@ -122,6 +158,7 @@ public partial class ChatViewModel : ObservableObject, IAsyncDisposable
     [RelayCommand]
     private void ClearMessages()
     {
+        while (_incomingQueue.TryDequeue(out _)) { }
         Messages.Clear();
         FilteredMessages.Clear();
         MessageCount = 0;
@@ -129,6 +166,7 @@ public partial class ChatViewModel : ObservableObject, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _batchTimer.Stop();
         await _chatService.DisposeAsync();
     }
 }

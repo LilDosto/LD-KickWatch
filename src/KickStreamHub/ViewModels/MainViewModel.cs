@@ -88,6 +88,36 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _activePlayerChannel = string.Empty;
     [ObservableProperty] private string _selectedQuality = "best";
 
+    public string SelectedQualityDisplay => SelectedQuality switch
+    {
+        "best" => "Kaynak (En İyi)",
+        "1080p60" => "1080p 60 FPS",
+        "720p60" => "720p 60 FPS",
+        "720p" => "720p",
+        "480p" => "480p",
+        "360p" => "360p",
+        "160p" => "160p",
+        "worst" => "En Düşük",
+        "audio_only" => "Sadece Ses",
+        _ => SelectedQuality
+    };
+
+    public void SetStreamQuality(string quality)
+    {
+        if (string.IsNullOrWhiteSpace(quality)) return;
+        if (string.Equals(SelectedQuality, quality, StringComparison.OrdinalIgnoreCase)) return;
+
+        SelectedQuality = quality;
+        OnPropertyChanged(nameof(SelectedQualityDisplay));
+        Config.StreamQuality = quality;
+        _configService.Save(Config);
+
+        if (IsEmbeddedPlaying && IsEmbeddedVlcActive && !string.IsNullOrEmpty(ActivePlayerChannel))
+        {
+            _ = PlayEmbeddedVlcPlayerAsync(ActivePlayerChannel);
+        }
+    }
+
     // Multi-Stream (Squad View) bindings
     [ObservableProperty] private bool _isQuadLayout = true;
 
@@ -192,14 +222,7 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedQualityChanged(string value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return;
-        Config.StreamQuality = value;
-        _configService.Save(Config);
-
-        if (IsEmbeddedPlaying && IsEmbeddedVlcActive && !string.IsNullOrEmpty(ActivePlayerChannel))
-        {
-            _ = PlayEmbeddedVlcPlayerAsync(ActivePlayerChannel);
-        }
+        OnPropertyChanged(nameof(SelectedQualityDisplay));
     }
 
     [RelayCommand]
