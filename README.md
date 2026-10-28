@@ -4,13 +4,14 @@
 
 **Kick.com için Modern Masaüstü Canlı Yayın İzleme Stüdyosu ve Sohbet İstemcisi**
 
+[![Release](https://img.shields.io/badge/Release-v1.3.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/LilDosto/LD-KickWatch)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/Lisans-MIT-53FC18?style=for-the-badge)](./LICENSE)
 
 Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kategori bildirimleri alın, **Pencere İçi Web Oynatıcı (WebView2)** veya **Pencere İçi Gömülü VLC** ile yayınları izleyin, **2x2 Çoklu Yayın (Squad View)** modunda 4 yayını aynı anda takip edin ve gerçek **Kick Emote** destekli canlı sohbete bağlanın.
 
-[📦 **Tek Dosya İndir (`LDKickWatch.exe`)**](./publish/LDKickWatch.exe) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
+[📦 **Son Sürümü İndir (v1.3.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
 
 </div>
 
@@ -124,6 +125,24 @@ LD-KickWatch/
 │       └── app.ico                    # Çoklu çözünürlüklü LD KickWatch simgesi
 └── LICENSE
 ```
+
+---
+
+## 🆕 Sürüm Geçmişi
+
+### 🟢 v1.3.0 (28 Ekim 2026)
+- **⚙ Oynatıcı İçi Anlık Kalite Seçimi:** Yayın çözünürlüğü ve kalite seçimi (`best`, `1080p60`, `720p60`, `720p`, `480p`, `360p`, `160p`, `audio_only`) doğrudan video oynatıcı araç çubuğuna taşındı.
+- **⚡ Ultra Hızlı Pencere İçi VLC Motoru:** Streamlink/Cloudflare bekleme ve donma sorunları tamamen giderildi. Kick AWS IVS master playlisti doğrudan bellek içinde ayrıştırılarak VLC'ye iletiliyor; yayınlar 0.3 saniyede gecikmesiz açılıyor.
+- **🎨 Aktif Oynatıcı Göstergesi:** `🌐 Web` ve `🎬 VLC` butonları, o anda hangi motorun oynatıldığını parlayan renkli vurgularla anında gösterir.
+- **🧹 Sadeleştirilmiş Ayarlar:** Kullanıcı deneyimini bozan varsayılan oynatıcı ve kalite ayarları Ayarlar sekmesinden kaldırılarak oynatıcıya entegre edildi.
+
+### 🟢 v1.2.0 (27 Ekim 2026)
+- **🎬 Pencere İçi VLC Desteği:** WinForms HWND entegrasyonuyla harici pencere açmadan uygulama içinde VLC desteği.
+- **💬 Split-View Yan Sohbet Paneli:** Ana pencerenin sağ tarafında açılıp kapanan yerleşik Kick sohbet çekmecesi.
+- **⊞ 2x2 Çoklu Yayın (Squad View):** 4 canlı yayını aynı anda izleme stüdyosu.
+- **😀 Kick Emote Çizimi:** Kick sohbetinde özel emote'ların görsel olarak çizilmesi.
+- **🔔 Gelişmiş Bildirimler:** Kategori değişikliği ve anahtar kelime alarmları.
+- **🛡 Tekil Çalışma (Single Instance):** Çift açılmayı engelleme ve temiz arka plan kapanışı.
 
 ---
 
