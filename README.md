@@ -4,14 +4,14 @@
 
 **Kick.com için Modern Masaüstü Canlı Yayın İzleme Stüdyosu ve Sohbet İstemcisi**
 
-[![Release](https://img.shields.io/badge/Release-v1.3.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.4.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/LilDosto/LD-KickWatch)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/Lisans-MIT-53FC18?style=for-the-badge)](./LICENSE)
 
 Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kategori bildirimleri alın, **Pencere İçi Web Oynatıcı (WebView2)** veya **Pencere İçi Gömülü VLC** ile yayınları izleyin, **2x2 Çoklu Yayın (Squad View)** modunda 4 yayını aynı anda takip edin ve gerçek **Kick Emote** destekli canlı sohbete bağlanın.
 
-[📦 **Son Sürümü İndir (v1.3.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
+[📦 **Son Sürümü İndir (v1.4.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
 
 </div>
 
@@ -129,6 +129,12 @@ LD-KickWatch/
 ---
 
 ## 🆕 Sürüm Geçmişi
+
+### 🟢 v1.4.0 (28 Ekim 2026)
+- **💬 Canlı Sohbet Bağlantı Sorunu Düzeltildi:** Kick'in yenilediği güncel Pusher WebSocket protokolü ve anahtarı entegre edildi. Artık tüm yayıncıların canlı sohbet akışları anında ve kesintisiz bağlanıyor.
+- **🔍 Kalite Seçim Kutusu Büyütüldü ve Ferahlatıldı:** Oynatıcı çubuğundaki kalite kutucuğu genişletildi, yazıların dikey/yatay kırpılması ve sıkışıklık tamamen giderildi; okunabilir, şık ve ferah bir tasarıma kavuşturuldu.
+- **🛑 Kesin Kapanış & Windows Job Object ile VLC Süreç Temizliği:** Uygulama kapatıldığında VLC veya alt süreçlerin arkada asılı kalması engellendi. Windows Job Object (`KILL_ON_JOB_CLOSE`) ile işletim sistemi seviyesinde tüm süreçler anında ve temiz şekilde sonlandırılır.
+- **🛡 Çift Açılma İyileştirmesi:** İkinci örnek açılmaya çalışıldığında modal kutu bekletmeden mevcut açık pencereyi sessizce öne getirir ve yeni örneği anında sonlandırır.
 
 ### 🟢 v1.3.0 (28 Ekim 2026)
 - **⚙ Oynatıcı İçi Anlık Kalite Seçimi:** Yayın çözünürlüğü ve kalite seçimi (`best`, `1080p60`, `720p60`, `720p`, `480p`, `360p`, `160p`, `audio_only`) doğrudan video oynatıcı araç çubuğuna taşındı.

@@ -578,14 +578,25 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private void SyncEmbeddedChat(string channelName)
+    private async void SyncEmbeddedChat(string channelName)
     {
         if (!IsEmbeddedChatOpen || string.IsNullOrWhiteSpace(channelName)) return;
         var status = GetStatus(channelName);
         var chatroomId = status?.ChatroomId ?? 0;
+
+        if (chatroomId == 0)
+        {
+            var channelData = await _api.GetChannelAsync(channelName).ConfigureAwait(false);
+            chatroomId = channelData?.Chatroom?.Id ?? 0;
+            if (chatroomId > 0 && status != null)
+            {
+                status.ChatroomId = chatroomId;
+            }
+        }
+
         if (chatroomId > 0)
         {
-            _ = EmbeddedChat.ConnectAsync(channelName, chatroomId);
+            await EmbeddedChat.ConnectAsync(channelName, chatroomId).ConfigureAwait(false);
         }
         else
         {
@@ -744,7 +755,7 @@ public partial class MainViewModel : ObservableObject
         await Task.CompletedTask;
     }
 
-    private void OpenChat(string? channelName)
+    private async void OpenChat(string? channelName)
     {
         channelName ??= SelectedChannel?.ChannelName;
         if (string.IsNullOrEmpty(channelName)) return;
@@ -761,14 +772,28 @@ public partial class MainViewModel : ObservableObject
         var chatroomId = status?.ChatroomId ?? 0;
         if (chatroomId == 0)
         {
-            StatusMessage = "⏳ Sohbet odası bilgisi henüz yüklenmedi, lütfen birkaç saniye bekleyin.";
+            StatusMessage = $"⏳ {channelName.ToUpperInvariant()} sohbet odası bağlanıyor...";
+            var channelData = await _api.GetChannelAsync(channelName).ConfigureAwait(false);
+            chatroomId = channelData?.Chatroom?.Id ?? 0;
+            if (chatroomId > 0 && status != null)
+            {
+                status.ChatroomId = chatroomId;
+            }
+        }
+
+        if (chatroomId == 0)
+        {
+            StatusMessage = $"⚠ {channelName.ToUpperInvariant()} için sohbet odası bulunamadı.";
             return;
         }
 
-        var chatWindow = new ChatWindow(channelName, chatroomId, Config.ChatMaxMessages);
-        _openChatWindows[channelName] = chatWindow;
-        chatWindow.Closed += (_, _) => _openChatWindows.Remove(channelName);
-        chatWindow.Show();
+        _dispatcher.Invoke(() =>
+        {
+            var chatWindow = new ChatWindow(channelName, chatroomId, Config.ChatMaxMessages);
+            _openChatWindows[channelName] = chatWindow;
+            chatWindow.Closed += (_, _) => _openChatWindows.Remove(channelName);
+            chatWindow.Show();
+        });
     }
 
     [RelayCommand]

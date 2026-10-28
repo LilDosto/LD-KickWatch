@@ -488,30 +488,33 @@
                                                     </Button.Style>
                                                 </Button>
 
-                                                <!-- Stream Quality Dropdown Directly On Player Toolbar -->
-                                                <Border Background="#090E16" CornerRadius="6" BorderBrush="#1F2E45" BorderThickness="1" Padding="6,1" VerticalAlignment="Center">
+                                                <!-- Stream Quality Dropdown Directly On Player Toolbar (Spacious & Clean) -->
+                                                <Border Background="#0B1320" CornerRadius="8" BorderBrush="#24344D" BorderThickness="1" Padding="8,2" Margin="6,0,0,0" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="⚙ Kalite:" Foreground="#94A3B8" FontSize="10.5" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                        <TextBlock Text="⚙ Kalite:" Foreground="#A0B3CC" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0" />
                                                         <ComboBox SelectedValue="{Binding SelectedQuality, Mode=TwoWay}"
                                                                   SelectedValuePath="Tag"
-                                                                  FontSize="10.5"
-                                                                  Padding="4,2"
-                                                                  Height="22"
-                                                                  MinWidth="110"
+                                                                  FontSize="12"
+                                                                  FontWeight="SemiBold"
+                                                                  Padding="8,4"
+                                                                  MinHeight="28"
+                                                                  MinWidth="155"
+                                                                  VerticalContentAlignment="Center"
                                                                   VerticalAlignment="Center"
-                                                                  Background="#0F1725"
+                                                                  Background="#121B2A"
                                                                   Foreground="#F8FAFC"
-                                                                  BorderThickness="0"
-                                                                  ToolTip="Yayın Çözünürlüğü ve Kalitesi">
-                                                            <ComboBoxItem Tag="best" Content="Kaynak (En İyi)" />
-                                                            <ComboBoxItem Tag="1080p60" Content="1080p 60 FPS" />
-                                                            <ComboBoxItem Tag="720p60" Content="720p 60 FPS" />
-                                                            <ComboBoxItem Tag="720p" Content="720p 30 FPS" />
-                                                            <ComboBoxItem Tag="480p" Content="480p" />
-                                                            <ComboBoxItem Tag="360p" Content="360p" />
-                                                            <ComboBoxItem Tag="160p" Content="160p" />
-                                                            <ComboBoxItem Tag="worst" Content="En Düşük" />
-                                                            <ComboBoxItem Tag="audio_only" Content="Sadece Ses" />
+                                                                  BorderBrush="#2E4160"
+                                                                  BorderThickness="1"
+                                                                  ToolTip="Yayın Çözünürlüğü ve Kalitesi (VLC &amp; Harici Oynatıcılar)">
+                                                            <ComboBoxItem Tag="best" Content="Kaynak (En İyi)" Padding="10,6" />
+                                                            <ComboBoxItem Tag="1080p60" Content="1080p 60 FPS" Padding="10,6" />
+                                                            <ComboBoxItem Tag="720p60" Content="720p 60 FPS" Padding="10,6" />
+                                                            <ComboBoxItem Tag="720p" Content="720p (Normal)" Padding="10,6" />
+                                                            <ComboBoxItem Tag="480p" Content="480p" Padding="10,6" />
+                                                            <ComboBoxItem Tag="360p" Content="360p (Tasarruf)" Padding="10,6" />
+                                                            <ComboBoxItem Tag="160p" Content="160p (Düşük)" Padding="10,6" />
+                                                            <ComboBoxItem Tag="worst" Content="En Düşük" Padding="10,6" />
+                                                            <ComboBoxItem Tag="audio_only" Content="Sadece Ses" Padding="10,6" />
                                                         </ComboBox>
                                                     </StackPanel>
                                                 </Border>

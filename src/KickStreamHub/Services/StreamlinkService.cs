@@ -142,6 +142,9 @@ public sealed class StreamlinkService
             var process = Process.Start(psi);
             if (process is null) return (false, "Pencere içi VLC başlatılamadı.");
 
+            // Windows Job Object'e bağla: Uygulama kapatıldığında VLC asla arkada açık kalmaz
+            Helpers.ChildProcessTracker.AddProcess(process);
+
             process.EnableRaisingEvents = true;
             process.Exited += (_, _) =>
             {
@@ -215,6 +218,8 @@ public sealed class StreamlinkService
             };
             var process = Process.Start(psi);
             if (process is null) return (false, "İşlem başlatılamadı.");
+
+            Helpers.ChildProcessTracker.AddProcess(process);
 
             process.EnableRaisingEvents = true;
             process.Exited += (_, _) =>

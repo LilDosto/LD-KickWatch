@@ -402,7 +402,8 @@ public partial class MainWindow : Window
         try { MultiWebView3.Dispose(); } catch { }
         try { VlcHost.Dispose(); } catch { }
 
-        System.Windows.Application.Current.Shutdown();
+        // Tüm arkaplan iş parçacıkları ve süreçleriyle birlikte hemen ve tamamen sonlandır
+        Environment.Exit(0);
     }
 
     private void BrowseStreamlink_Click(object sender, RoutedEventArgs e)

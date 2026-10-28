@@ -22,8 +22,8 @@ public class ChatMessageEventArgs : EventArgs
 /// </summary>
 public sealed partial class PusherChatService : IAsyncDisposable
 {
-    private const string PusherAppKey = "32cbd69e4b950bf97679";
-    private const string PusherCluster = "us2";
+    private static string s_activeAppKey = "34bf7a0ff419a2a775b9";
+    private static string s_activeCluster = "us2";
 
     [GeneratedRegex(@"\[emote:\d+:([^\]]+)\]")]
     private static partial Regex KickEmoteRegex();
@@ -102,7 +102,7 @@ public sealed partial class PusherChatService : IAsyncDisposable
     private async Task ConnectOnceAsync(CancellationToken ct)
     {
         _socket = new ClientWebSocket();
-        var uri = new Uri($"wss://ws-{PusherCluster}.pusher.com/app/{PusherAppKey}?protocol=7&client=js&version=8.4.0&flash=false");
+        var uri = new Uri($"wss://ws-{s_activeCluster}.pusher.com/app/{s_activeAppKey}?protocol=7&client=js&version=8.4.0&flash=false");
         await _socket.ConnectAsync(uri, ct).ConfigureAwait(false);
         _reconnectAttempt = 0;
         ConnectionStateChanged?.Invoke(this, true);
@@ -179,6 +179,10 @@ public sealed partial class PusherChatService : IAsyncDisposable
 
                 case "pusher:ping":
                     await SendAsync("{\"event\":\"pusher:pong\",\"data\":{}}", ct).ConfigureAwait(false);
+                    break;
+
+                case "pusher:error":
+                    LoggingService.Instance.Warning($"Pusher sohbet hatası: {raw}");
                     break;
             }
         }

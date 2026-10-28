@@ -23,19 +23,13 @@ public partial class App : System.Windows.Application
 
         if (!isNewInstance)
         {
-            // Çalışmakta olan örneği öne getir
+            // Çalışmakta olan açık pencereyi öne getir ve ikinci örneği derhal sonlandır
             try
             {
                 using var evt = EventWaitHandle.OpenExisting(ActivateEventName);
                 evt.Set();
             }
             catch { }
-
-            System.Windows.MessageBox.Show(
-                "LD KickWatch zaten çalışıyor! Açık olan pencere ekrana getirildi.",
-                "LD KickWatch",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
 
             Environment.Exit(0);
             return;
