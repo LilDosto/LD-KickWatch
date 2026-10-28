@@ -4,14 +4,14 @@
 
 **Kick.com için Modern Masaüstü Canlı Yayın İzleme Stüdyosu ve Sohbet İstemcisi**
 
-[![Release](https://img.shields.io/badge/Release-v1.6.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.7.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/LilDosto/LD-KickWatch)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/Lisans-MIT-53FC18?style=for-the-badge)](./LICENSE)
 
 Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kategori bildirimleri alın, **Pencere İçi Web Oynatıcı (WebView2)** veya **Pencere İçi Gömülü VLC** ile yayınları izleyin, **2x2 Çoklu Yayın (Squad View)** modunda 4 yayını aynı anda takip edin ve gerçek **Kick Emote** destekli canlı sohbete bağlanın.
 
-[📦 **Son Sürümü İndir (v1.6.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
+[📦 **Son Sürümü İndir (v1.7.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
 
 </div>
 
@@ -54,9 +54,18 @@ Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kat
 
 ## 📥 Kurulum ve Kullanım
 
-### Seçenek 1: Hazır Tek Dosya İle Çalıştırma (Önerilen)
-1. Bu depodaki [`publish/LDKickWatch.exe`](./publish/LDKickWatch.exe) dosyasını indirin.
-2. Çift tıklayarak doğrudan çalıştırın (`.NET Runtime` dahil tüm bağımlılıklar tek `.exe` içine gömülüdür, kurulum gerektirmez).
+### Seçenek 1: Resmi Windows Kurulum Sihirbazı (Önerilen)
+1. Releases sayfasından **[`LD-KickWatch-Setup-v1.7.0.exe`](https://github.com/LilDosto/LD-KickWatch/releases/latest)** kurulum sihirbazını indirin.
+2. Kurulumu çalıştırın:
+   - Masaüstüne otomatik simgeli kısayol oluşturulur.
+   - Başlat Menüsü'ne "LD KickWatch" eklenir.
+   - Windows "Uygulamalar ve Özellikler" (Denetim Masası) listesine kaydedilir ve temiz kaldırma (Uninstaller) desteği sunar.
+   - Yönetici yetkisi (UAC) gerektirmez; saniyeler içinde kurulur.
+
+### Seçenek 2: Taşınabilir Tek Dosya (Portable)
+1. [`publish/LDKickWatch.exe`](./publish/LDKickWatch.exe) veya `LD-KickWatch-v1.7.0-win-x64.zip` dosyasını indirin.
+2. Doğrudan çift tıklayarak çalıştırın (`.NET Runtime` içine gömülüdür).
+3. İsterseniz uygulama içi **Ayarlar (⚙)** menüsünden **"🖥️ Masaüstü Kısayolu Oluştur"** butonuna basarak tek tıkla masaüstünüze simgeli kısayol ekleyebilirsiniz.
 
 ### Seçenek 2: Kaynak Koddan Derleme
 Gereksinimler: [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (Windows)
@@ -129,6 +138,15 @@ LD-KickWatch/
 ---
 
 ## 🆕 Sürüm Geçmişi
+
+### 🟢 v1.7.0 (29 Ekim 2026) - Resmi Windows Kurulum Sihirbazı & Masaüstü Kısayol Entegrasyonu
+- **📦 Resmi Windows Setup (.exe) Kurulum Paketi:** LD KickWatch artık normal bir Windows programı gibi tek tıkla kurulabilir (`LD-KickWatch-Setup-v1.7.0.exe`).
+  - Kurulum tamamlandığında Masaüstüne özel simgeli kısayol ekler.
+  - Başlat Menüsü'ne "LD KickWatch" program kaydını ekler.
+  - Denetim Masası / Windows Ayarları "Program Ekle veya Kaldır" listesine resmi kayıt açar ve sorunsuz kaldırıcı (Uninstaller) sunar.
+  - Yönetici (Administrator) izni gerektirmeden kullanıcı profiline anında kurulur.
+- **🖥️ Uygulama İçi Tek Tıkla Masaüstü Kısayolu Oluşturma:** Taşınabilir (Portable) sürümü kullananlar için Ayarlar (⚙) sekmesine *"Masaüstü Kısayolu Oluştur"* butonu eklendi. Tek tıkla masaüstüne uygulama simgesiyle tam çalışan `.lnk` kısayolu bırakır.
+- **🛡 Gelişmiş Kurulum Koruması:** Kurulum veya güncelleme esnasında LD KickWatch açık ise otomatik algılayıp güvenli şekilde kapatır ve dosyaları sorunsuz günceller.
 
 ### 🟢 v1.6.0 (28 Ekim 2026) - Büyük Akışkanlık & Sıfır Donma Optimize Yaması
 - **🚀 Donanımsal 60 FPS Render & Animasyon Motoru:** WPF alt motoruna 60 FPS hedef kare hızı (`DesiredFrameRate = 60`) ve tam donanım hızlandırmalı render optimizasyonu uygulandı.

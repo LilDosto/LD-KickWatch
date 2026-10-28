@@ -1116,7 +1116,17 @@
                             <CheckBox Content="Uygulamayı küçültülmüş olarak başlat"
                                       IsChecked="{Binding Config.StartMinimized}" Margin="0,0,0,10" />
                             <CheckBox Content="Windows başlangıcında LD KickWatch'u otomatik çalıştır"
-                                      IsChecked="{Binding Config.RunOnStartup}" />
+                                      IsChecked="{Binding Config.RunOnStartup}" Margin="0,0,0,14" />
+
+                            <Separator Background="#1B283B" Height="1" Margin="0,0,0,14" />
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="🖥️ Masaüstü Kısayolu Oluştur" Style="{StaticResource SecondaryButton}"
+                                        Padding="14,7" FontSize="12.5"
+                                        Click="CreateDesktopShortcut_Click" />
+                                <TextBlock Text="Masaüstüne tek tıkla simgeli kısayol ekler" 
+                                           Foreground="#64748B" FontSize="11.5" VerticalAlignment="Center" Margin="12,0,0,0" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

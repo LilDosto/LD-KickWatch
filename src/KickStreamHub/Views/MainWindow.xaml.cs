@@ -510,6 +510,20 @@ public partial class MainWindow : Window
         _viewModel.ActivePage = "home";
     }
 
+    private void CreateDesktopShortcut_Click(object sender, RoutedEventArgs e)
+    {
+        if (ShortcutService.CreateDesktopShortcut(out string message))
+        {
+            _viewModel.StatusMessage = $"✔ {message}";
+            System.Windows.MessageBox.Show(message, "Masaüstü Kısayolu", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            _viewModel.StatusMessage = $"⚠ {message}";
+            System.Windows.MessageBox.Show(message, "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private class RelayFocusCommand : ICommand
     {
         private readonly MainWindow _win;
