@@ -194,7 +194,7 @@ public partial class MainWindow : Window
 
     private void ViewModel_FullScreenChanged(object? sender, bool enable)
     {
-        Dispatcher.Invoke(() =>
+        Dispatcher.BeginInvoke((Action)(() =>
         {
             if (enable)
             {
