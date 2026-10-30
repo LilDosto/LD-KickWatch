@@ -9,9 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>KickStreamHub</RootNamespace>
     <AssemblyName>LDKickWatch</AssemblyName>
-    <Version>1.7.0</Version>
-    <AssemblyVersion>1.7.0.0</AssemblyVersion>
-    <FileVersion>1.7.0.0</FileVersion>
+    <Version>1.8.0</Version>
+    <AssemblyVersion>1.8.0.0</AssemblyVersion>
+    <FileVersion>1.8.0.0</FileVersion>
     <Product>LD KickWatch</Product>
     <AssemblyTitle>LD KickWatch</AssemblyTitle>
     <Company>LD KickWatch</Company>

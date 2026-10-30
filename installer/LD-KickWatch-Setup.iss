@@ -1,5 +1,5 @@
 #define MyAppName "LD KickWatch"
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.8.0"
 #define MyAppPublisher "LilDosto"
 #define MyAppURL "https://github.com/LilDosto/LD-KickWatch"
 #define MyAppExeName "LDKickWatch.exe"
@@ -18,7 +18,7 @@ DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE
 PrivilegesRequired=lowest
 OutputDir=..\publish
-OutputBaseFilename=LD-KickWatch-Setup-v1.7.0
+OutputBaseFilename=LD-KickWatch-Setup-v1.8.0
 SetupIconFile=..\src\KickStreamHub\Resources\app.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64

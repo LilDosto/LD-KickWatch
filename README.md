@@ -4,14 +4,14 @@
 
 **Kick.com için Modern Masaüstü Canlı Yayın İzleme Stüdyosu ve Sohbet İstemcisi**
 
-[![Release](https://img.shields.io/badge/Release-v1.7.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.8.0-53FC18?style=for-the-badge&logo=github)](https://github.com/LilDosto/LD-KickWatch/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20(x64)-0078D6?style=for-the-badge&logo=windows)](https://github.com/LilDosto/LD-KickWatch)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/Lisans-MIT-53FC18?style=for-the-badge)](./LICENSE)
 
 Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kategori bildirimleri alın, **Pencere İçi Web Oynatıcı (WebView2)** veya **Pencere İçi Gömülü VLC** ile yayınları izleyin, **2x2 Çoklu Yayın (Squad View)** modunda 4 yayını aynı anda takip edin ve gerçek **Kick Emote** destekli canlı sohbete bağlanın.
 
-[📦 **Son Sürümü İndir (v1.7.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
+[📦 **Son Sürümü İndir (v1.8.0 Releases)**](https://github.com/LilDosto/LD-KickWatch/releases/latest) • [🚀 **Özellikler**](#-başlıca-özellikler) • [⌨ **Kısayollar**](#-klavye-kısayolları) • [🛠 **Derleme**](#-kaynak-koddan-derleme)
 
 </div>
 
@@ -55,7 +55,7 @@ Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kat
 ## 📥 Kurulum ve Kullanım
 
 ### Seçenek 1: Resmi Windows Kurulum Sihirbazı (Önerilen)
-1. Releases sayfasından **[`LD-KickWatch-Setup-v1.7.0.exe`](https://github.com/LilDosto/LD-KickWatch/releases/latest)** kurulum sihirbazını indirin.
+1. Releases sayfasından **[`LD-KickWatch-Setup-v1.8.0.exe`](https://github.com/LilDosto/LD-KickWatch/releases/latest)** kurulum sihirbazını indirin.
 2. Kurulumu çalıştırın:
    - Masaüstüne otomatik simgeli kısayol oluşturulur.
    - Başlat Menüsü'ne "LD KickWatch" eklenir.
@@ -63,7 +63,7 @@ Favori **Kick.com** yayıncılarınızı takip edin, anlık canlı yayın ve kat
    - Yönetici yetkisi (UAC) gerektirmez; saniyeler içinde kurulur.
 
 ### Seçenek 2: Taşınabilir Tek Dosya (Portable)
-1. [`publish/LDKickWatch.exe`](./publish/LDKickWatch.exe) veya `LD-KickWatch-v1.7.0-win-x64.zip` dosyasını indirin.
+1. [`publish/LDKickWatch.exe`](./publish/LDKickWatch.exe) veya `LD-KickWatch-v1.8.0-win-x64.zip` dosyasını indirin.
 2. Doğrudan çift tıklayarak çalıştırın (`.NET Runtime` içine gömülüdür).
 3. İsterseniz uygulama içi **Ayarlar (⚙)** menüsünden **"🖥️ Masaüstü Kısayolu Oluştur"** butonuna basarak tek tıkla masaüstünüze simgeli kısayol ekleyebilirsiniz.
 
@@ -138,6 +138,12 @@ LD-KickWatch/
 ---
 
 ## 🆕 Sürüm Geçmişi
+
+### 🟢 v1.8.0 (31 Ekim 2026) - Ayrı Pencere (PiP) Çift Oynatıcı Motoru (Web & VLC) & Kalite Seçimi
+- **🎬 Bağımsız Pencerede (PlayerWindow) Dahili VLC Motoru:** Ayrı pencere (PiP) oynatıcısına doğrudan **🌐 Web** ve **🎬 VLC** motor değiştirme butonları eklendi. Kullanıcılar ayrı pencerede de ultra düşük gecikmeli, donanımsal VLC deneyimini kullanabilir.
+- **⚙ Ayrı Pencere Kalite Seçici (ContextMenu):** Ayrı pencere üst çubuğuna açılır kalite menüsü (`best`, `1080p60`, `720p60`, `480p`, `360p`, `160p`, `audio_only`) eklendi. Seçilen kaliteye göre VLC yayını anında güncellenir.
+- **🎨 Görsel Durum & Renkli Vurgular:** Hangi motorun devrede olduğu yeşil (`🌐 Web`) ve sarı/amber (`🎬 VLC`) parlayan buton vurgularıyla net biçimde gösterilir.
+- **🛡 Job Object & Çift Tıklama Tam Ekran:** Ayrı pencerede VLC aktifken video alanına çift tıklama ile tam ekran geçişi ve pencere kapatıldığında arka plandaki VLC sürecinin Job Object ile kesin olarak sonlandırılması sağlandı.
 
 ### 🟢 v1.7.0 (29 Ekim 2026) - Resmi Windows Kurulum Sihirbazı & Masaüstü Kısayol Entegrasyonu
 - **📦 Resmi Windows Setup (.exe) Kurulum Paketi:** LD KickWatch artık normal bir Windows programı gibi tek tıkla kurulabilir (`LD-KickWatch-Setup-v1.7.0.exe`).
